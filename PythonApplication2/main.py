@@ -1,0 +1,81 @@
+import time
+import pygame
+from sys import exit
+from realtimeRenderer import *
+from staticRenderer import *
+from utilities import *
+
+state = "setup" #states: setup, editor, rendering
+
+pygame.init()
+clock = pygame.time.Clock()
+
+opt = int(input("Renderer Main Menu\n1 - Run demo\n2 - Load file\n3 - Open editor"))
+if opt == 2:
+    obj = input("File to load: ")
+    sf = float(input("SF: "))
+    shapes = (obj, sf)
+else:
+    shapes = (0, 0)
+if not opt == 1:
+    camPos = input("Camera position: ")
+    camPos = tuple(int(x) for x in camPos.split(","))
+    baseCamX, baseCamY, baseCamZ = camPos
+    lightPos = input("Light source (CAM for camera): ")
+else:
+    baseCamX, baseCamY, baseCamZ = 0, 0, 1000
+    lightPos = "CAM"
+if not lightPos == "CAM":
+    lightPos = tuple(int(y) for y in lightPos.split(","))
+    
+polyGoal = int(input("Polygon display limit (reccommended 1000): "))
+
+winWidth, winHeight = 810, 540
+window = pygame.display.set_mode((winWidth, winHeight), pygame.RESIZABLE)
+
+count = 0
+focalLength = 300
+rt = RealtimeRenderer(window, focalLength, clock, baseCamX, baseCamY, baseCamZ, polyGoal, lightPos)
+
+startTime = time.perf_counter()
+
+objColour = normaliseRGB((255, 92, 0))
+loadedObj = rt.load(shapes[0],shapes[1], objColour)
+
+rt.placeEye(0,0,150,(200,200))
+
+rt.update()
+
+state = "rendering"
+#state = "editor"
+
+while state == "editor":
+    rt.update()
+    polygons = rt.setup(loadedObj)
+    rt.render(unnest(polygons))
+    
+    pygame.display.flip()
+    rt.clock.tick()
+    count += 1
+    
+    for event in pygame.event.get():
+        if event.type == pygame.MOUSEWHEEL:
+            rt.focalLength += event.y * 20
+            if rt.focalLength < 4:
+                rt.focalLength = 4 #prevents focal length from inverting (negative)
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_c:
+                rt.eyeShowHide()
+            if event.key == pygame.K_r:
+                state = "rendering"
+                print(rt.window.get_width())
+                pygame.quit()
+                
+sr = StaticRenderer(0,0,(0,0,0))
+
+renderInput = None
+sr = StaticRenderer(320,180,(0,0,0))
+sr.render()
