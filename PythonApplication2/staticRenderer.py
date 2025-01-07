@@ -1,3 +1,4 @@
+import pathlib
 import PIL.Image
 import random
 import math
@@ -18,6 +19,7 @@ class Vect: #class for a 3D vector
             return Vect(self.x + add.x, self.y + add.y, self.z + add.z)
         elif type(add) == int or type(add) == float:
             return Vect(self.x + add, self.y + add, self.z + add)
+        
         return self
 
     def __sub__(self, sub): #method for subtracting a vector or scalar from the vector
@@ -30,11 +32,19 @@ class Vect: #class for a 3D vector
     def __mul__(self, mul):
         if type(mul) == int or type(mul) == float:
             return Vect(self.x * mul, self.y * mul, self.z * mul)
+        
+        if type(mul) == Vect:
+            return Vect(self.x * mul.x, self.y * mul.y, self.z * mul.z)
+
         return self
     
     def __truediv__(self, div):
         if type(div) == int or type(div) == float:
             return Vect(self.x / div, self.y / div, self.z * div)
+        
+        if type(div) == Vect:
+            return Vect(self.x / div.x, self.y / div.y, self.z / div.z)
+
         return self
 
     def dot(self, dotVect): #method for calculating the dot product of the vector with another vector
@@ -93,29 +103,35 @@ class HitInfo:
 class Ray:
     def __init__(self, origin: Vect, direction: Vect): #defines the origin point as a vector and the direction as a unit vector in the direction of the ray's travel
         self.origin = origin
-        self.direction = direction.normalise()
+        self.direction = direction#.normalise()
 
     def __repr__(self):
         return f"(Origin:{self.origin}, Direction:{self.direction})"
 
     def hitSphere(self, sphere: Sphere): #checks if the ray intersects a given sphere
         #define a, b, and c as the coefficients in the polynomial
-        a = self.direction.x ** 2 + self.direction.y ** 2 + self.direction.z ** 2
-        b = (2 * self.origin.x * self.direction.x - 2 * sphere.centre.x * self.direction.x +
-             2 * self.origin.y * self.direction.y - 2 * sphere.centre.y * self.direction.y +
-             2 * self.origin.z * self.direction.z - 2 * sphere.centre.z * self.direction.z)
-        c = (self.origin.x ** 2 + sphere.centre.x ** 2 - self.origin.x * sphere.centre.x +
-             self.origin.y ** 2 + sphere.centre.y ** 2 - self.origin.y * sphere.centre.y +
-             self.origin.z ** 2 + sphere.centre.z ** 2 - self.origin.z * sphere.centre.z -
-             sphere.radius ** 2)
+        #a = self.direction.x ** 2 + self.direction.y ** 2 + self.direction.z ** 2
+        #b = (2 * self.origin.x * self.direction.x - 2 * sphere.centre.x * self.direction.x +
+        #     2 * self.origin.y * self.direction.y - 2 * sphere.centre.y * self.direction.y +
+        #     2 * self.origin.z * self.direction.z - 2 * sphere.centre.z * self.direction.z)
+        #c = (self.origin.x ** 2 + sphere.centre.x ** 2 - self.origin.x * sphere.centre.x +
+        #     self.origin.y ** 2 + sphere.centre.y ** 2 - self.origin.y * sphere.centre.y +
+        #     self.origin.z ** 2 + sphere.centre.z ** 2 - self.origin.z * sphere.centre.z -
+        #     sphere.radius ** 2)
+        OC = self.origin - sphere.centre
+        a = self.direction.dot(self.direction) 
+        b = 2 * self.direction.dot(OC)
+        c = OC.dot(OC) - sphere.radius ** 2
+
         intersects = solveQuadratic(a, b, c) #returns False for no intersections, or a tuple of roots otherwise - root represents the distance along the ray that it intersects the sphere
+        
         if intersects == False or (intersects[0] < 0 and intersects[1] < 0):
             return HitInfo(False, None, None, None, Vect(1,1,1), Vect(0,0,0), 0)
         
         dist = min(intersects) if intersects[0] > 0 and intersects[1] > 0 else max(intersects)
         
         hitPoint = self.origin + (self.direction * dist)
-        normal = hitPoint - sphere.centre
+        normal = (hitPoint - sphere.centre).normalise()
         
         return HitInfo(True, dist, hitPoint, normal, sphere.colour, sphere.emissColour, sphere.emission)
 
@@ -138,31 +154,36 @@ class StaticRenderer:
         return closestHit
         
     def pixelShader(self, x, y, maxBounces): #run for every pixel on the screen, return colour as a triple of 0-255 values
-        x, y = self.centraliseCoord(x, y)
-        ray = Ray(self.camPos, Vect(x, y, -70))
+        coord   = Vect(x, self.height - y, 1.0)
+        coord  /= Vect(self.width, self.height, 1.0) 
+        coord   = coord * 2 - 1
+        coord.z = -1.0
+
+        aspectRatio = self.width / self.height
+        coord.x *= aspectRatio
+
+        ray = Ray(Vect(0, 0, 0), coord.normalise())
         colour = Vect(1,1,1)
         light = Vect(0,0,0)
+
+        hit = 0
+
         for i in range(maxBounces):
             hitInfo = self.findRayHit(ray)
             if hitInfo.hit:
-                #colour = colour * hitInfo.colour * (1 / 255)
-                #dot = 1 - (ray.direction.dot(hitInfo.normal.normalise()) * 0.5 + 0.5)
-                #dot *= 6 / hitInfo.dist
-                #colour *= (hitInfo.colour.normalise) * dot
-                #emission = hitInfo.colour * hitInfo.emission
-                #accumulation += emission
-                #accumulation += hitInfo.emission
-                emission = hitInfo.emissColour / 255 * hitInfo.emission
-                light += emission * colour
-                colour *= hitInfo.colour / 255
+                emission = (hitInfo.emissColour / 255) * hitInfo.emission
+                light  += emission
+                colour *= (hitInfo.colour / 255)
 
-                ray.origin = hitInfo.hitPoint
-                bounce = Vect((random.random() * 2) - 1, (random.random() * 2) - 1, (random.random() * 2) - 1)
-                if bounce.dot(hitInfo.normal) < 0:
-                    bounce = bounce * -1
-                ray.direction = bounce
+                ray.origin = hitInfo.hitPoint + hitInfo.normal * 0.01
+
+                bounce = ray.direction - (hitInfo.normal * 2 * (ray.direction.dot(hitInfo.normal)))
+                ray.direction = bounce.normalise()
             else:
+                skyColor = Vect(0.2, 0.2, 0.3)
+                light += colour * skyColor
                 break
+
         return (light * 255).roundTuple()
 
     def centraliseCoord(self, x, y): #adjusts pixels to have 0,0 as centre x y (2D coords)
@@ -174,16 +195,16 @@ class StaticRenderer:
         pixels = self.image.load()
         for y in range(self.height):
             for x in range(self.width):
-                temp = self.pixelShader(x,y,6)
-                pixels[x,y] = temp
+                pixels[x,y] = self.pixelShader(x,y, 6)
                 
     def render(self):
         startTime = time.perf_counter()
-        self.objects.append(Sphere(Vect(-20,0,-20), 5, Vect(0,0,0), Vect(255,255,255), 2))
-        self.objects.append(Sphere(Vect(-10,0,-100), 60, Vect(0,255,0), Vect(0,255,0), 0))
-        self.objects.append(Sphere(Vect(60,0,-120), 30, Vect(170,0,255), Vect(170,0,255), 0))
+
+        self.objects.append(Sphere(Vect(0, 0, -5),  2,  Vect(0,255,0),   Vect(0,255,0),     2))
+        self.objects.append(Sphere(Vect(4, 0, -5), 2,  Vect(0,0,255),   Vect(0,255,0),     0))
         
         print("Rendering scene...")
+
         self.blitPixels()
         print("Render time:", timer(startTime))
         print("Image size:",self.width,self.height)
