@@ -2,7 +2,7 @@ import time
 import pygame
 from sys import exit
 from realtimeRenderer import *
-from staticRenderer import *
+from staticRendererNew import *
 from utilities import *
 
 state = "setup" #states: setup, editor, rendering
@@ -46,6 +46,9 @@ rt.placeEye(0,0,150,(200,200))
 
 rt.update()
 
+sr = StaticRenderer(320,180,(0,0,0))
+sr.render()
+
 state = "rendering"
 #state = "editor"
 
@@ -74,8 +77,7 @@ while state == "editor":
                 print(rt.window.get_width())
                 pygame.quit()
                 
-sr = StaticRenderer(0,0,(0,0,0))
-
+#sr = StaticRenderer(0,0,(0,0,0))
 renderInput = None
 sr = StaticRenderer(320,180,(0,0,0))
 sr.render()

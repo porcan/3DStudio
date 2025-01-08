@@ -1,8 +1,11 @@
-import pathlib
-import PIL.Image
+from multiprocessing import Pool
+import os
+import sys
 import random
 import math
+import numpy as np
 import time
+import pygame
 from utilities import *
 
 class Vect: #class for a 3D vector
@@ -74,6 +77,10 @@ class Vect: #class for a 3D vector
     
     def roundTuple(self):
         return(round(self.x), round(self.y), round(self.z))
+
+
+def randomVector() -> Vect:
+    return Vect(random.random() * 2 - 1.0, random.random() * 2 - 1.0, random.random() * 2.0 - 1.0)        
     
 class Sphere:
     def __init__(self, centre: Vect, radius, colour: Vect, emissColour: Vect, emission: float):
@@ -103,23 +110,15 @@ class HitInfo:
 class Ray:
     def __init__(self, origin: Vect, direction: Vect): #defines the origin point as a vector and the direction as a unit vector in the direction of the ray's travel
         self.origin = origin
-        self.direction = direction#.normalise()
+        self.direction = direction.normalise()
 
     def __repr__(self):
         return f"(Origin:{self.origin}, Direction:{self.direction})"
 
     def hitSphere(self, sphere: Sphere): #checks if the ray intersects a given sphere
         #define a, b, and c as the coefficients in the polynomial
-        #a = self.direction.x ** 2 + self.direction.y ** 2 + self.direction.z ** 2
-        #b = (2 * self.origin.x * self.direction.x - 2 * sphere.centre.x * self.direction.x +
-        #     2 * self.origin.y * self.direction.y - 2 * sphere.centre.y * self.direction.y +
-        #     2 * self.origin.z * self.direction.z - 2 * sphere.centre.z * self.direction.z)
-        #c = (self.origin.x ** 2 + sphere.centre.x ** 2 - self.origin.x * sphere.centre.x +
-        #     self.origin.y ** 2 + sphere.centre.y ** 2 - self.origin.y * sphere.centre.y +
-        #     self.origin.z ** 2 + sphere.centre.z ** 2 - self.origin.z * sphere.centre.z -
-        #     sphere.radius ** 2)
         OC = self.origin - sphere.centre
-        a = self.direction.dot(self.direction) 
+        a = self.direction.dot(self.direction)  # or self.direction.x**2 + self.direction.y**2 + self.direction.z**2
         b = 2 * self.direction.dot(OC)
         c = OC.dot(OC) - sphere.radius ** 2
 
@@ -127,7 +126,8 @@ class Ray:
         
         if intersects == False or (intersects[0] < 0 and intersects[1] < 0):
             return HitInfo(False, None, None, None, Vect(1,1,1), Vect(0,0,0), 0)
-        
+    
+
         dist = min(intersects) if intersects[0] > 0 and intersects[1] > 0 else max(intersects)
         
         hitPoint = self.origin + (self.direction * dist)
@@ -140,78 +140,120 @@ class StaticRenderer:
         self.width = width
         self.height = height
         self.camPos = Vect(camPos[0], camPos[1], camPos[2])
-        self.image = PIL.Image.new(mode = "RGB", size = (width, height))
         self.objects = []
-            
-    def findRayHit(self, ray):
+        self.accumulationBuffer =  np.full((width, height), Vect(0, 0, 0), dtype=object)
+        self.frames = 1
+        self.surface = np.zeros((width, height, 3), dtype=np.uint8) 
+
+        pygame.init()
+        self.screen = pygame.display.set_mode((width * 2, height * 2), pygame.RESIZABLE)
+
+    @staticmethod
+    def findRayHit(objects, ray):
         closestHit = HitInfo(None, float("inf"), None, None, Vect(0,0,0), Vect(0,0,0), 0)
-        for object in self.objects:
+        for object in objects:
             if type(object) == Sphere:
                 hitInfo = ray.hitSphere(object)
                 if hitInfo.hit and (hitInfo.dist < closestHit.dist):
                     closestHit = hitInfo
-                    #shade = (int(object.colour[0] - (hitInfo.dist * 2)), int(object.colour[1] - (hitInfo.dist * 2)), int(object.colour[2] - (hitInfo.dist * 2)))
+
         return closestHit
-        
-    def pixelShader(self, x, y, maxBounces): #run for every pixel on the screen, return colour as a triple of 0-255 values
-        coord   = Vect(x, self.height - y, 1.0)
-        coord  /= Vect(self.width, self.height, 1.0) 
+
+    @staticmethod
+    def pixelShader(args):
+        objects, x, y, maxBounces, width, height = args
+        coord   = Vect(x, height - y, 1.0)
+        coord  /= Vect(width, height, 1.0) 
         coord   = coord * 2 - 1
         coord.z = -1.0
 
-        aspectRatio = self.width / self.height
+        aspectRatio = width / height
         coord.x *= aspectRatio
 
         ray = Ray(Vect(0, 0, 0), coord.normalise())
         colour = Vect(1,1,1)
-        light = Vect(0,0,0)
+        light  = Vect(0,0,0)
 
-        hit = 0
-
-        for i in range(maxBounces):
-            hitInfo = self.findRayHit(ray)
+        for _ in range(maxBounces):
+            hitInfo = StaticRenderer.findRayHit(objects, ray)
             if hitInfo.hit:
-                emission = (hitInfo.emissColour / 255) * hitInfo.emission
-                light  += emission
-                colour *= (hitInfo.colour / 255)
-
+                light  += hitInfo.colour * hitInfo.emission 
+                colour *= hitInfo.colour
+                
                 ray.origin = hitInfo.hitPoint + hitInfo.normal * 0.01
 
                 #bounce = ray.direction - (hitInfo.normal * 2 * (ray.direction.dot(hitInfo.normal)))
-                bounce = Vect(random.random() * 2 - 1, random.random() * 2 - 1, random.random() * 2 - 1)
-                if bounce.dot(hitInfo.normal) < 0:
-                    bounce = bounce * -1
-                    
-                ray.direction = bounce.normalise()
+                #bounce = bounce.normalise()
+
+                bounce = randomVector() + hitInfo.normal
+                bounce = bounce.normalise()
+
+                ray.direction = bounce 
+
             else:
-                skyColor = Vect(0.2, 0.2, 0.3)
+                skyColor = Vect(0.05, 0.05, 0.1)
                 light += colour * skyColor
+
                 break
 
-        return (light * 255).roundTuple()
+        return light
+    
+    def parallelShading(self):
+        coords = [(self.objects, index % self.width, index // self.width, 3, self.width, self.height) for index in range(self.width * self.height)]
 
-    def centraliseCoord(self, x, y): #adjusts pixels to have 0,0 as centre x y (2D coords)
-        nX = x - (self.width / 2)
-        nY = (self.height / 2) - y
-        return nX, nY
+        colors = []
 
-    def blitPixels(self):
-        pixels = self.image.load()
-        for y in range(self.height):
-            for x in range(self.width):
-                pixels[x,y] = self.pixelShader(x,y, 6)
+        for coord in coords:
+            colors.append(StaticRenderer.pixelShader(coord))
+
+        for coord, color in zip(coords, colors):
+            x, y = coord[1], coord[2]
+            self.accumulationBuffer[x, y] += color
+        
+    def show(self):
+        generator = ((index % self.width, index // self.width) for index in range(self.width * self.height))
+        
+        for x, y in generator:
+            color = (self.accumulationBuffer[x, y] * 255)  
+            color /= float(self.frames)
+            color = color.roundTuple()
+            color = tuple(min(255, max(0, c)) for c in color)
+            
+            self.surface[x, y] = color
+
+        pySurface = pygame.surfarray.make_surface(self.surface)
+
+        scaledSurface = pygame.transform.scale(pySurface, self.screen.get_size())
+
+        self.screen.blit(scaledSurface, (0, 0))
+
+        pygame.display.flip()
+        
+        
                 
     def render(self):
-        startTime = time.perf_counter()
+        self.objects.append(Sphere(Vect(-30, 40, -70), 30, Vect(1,1,1), Vect(1,1,1), 1))
+        self.objects.append(Sphere(Vect(-1, 0, -5), 2, Vect(1, 0.7, 0.1), Vect(1, 0.7, 0.1), 0.6)) 
+        self.objects.append(Sphere(Vect(3.5, -0.5, -5), 1.75, Vect(0.1, 0.1, 0.8), Vect(0.1, 0.1, 0.8), 0.0))  
+        self.objects.append(Sphere(Vect(0, -1000, -100), 1000, Vect(0.7, 0.5, 0.6), Vect(0.7, 0.5, 0.6), 0.0))
 
-        self.objects.append(Sphere(Vect(-4, 4, -20), 7, Vect(0,0,0), Vect(255,255,255), 2))
-        self.objects.append(Sphere(Vect(-1, 0, -5), 2, Vect(255, 180, 25), Vect(255, 180, 25), 0.6)) 
-        self.objects.append(Sphere(Vect(3, 0, -5), 2, Vect(25, 25, 180), Vect(0.3, 0.8, 0.8), 0.0))  
-        self.objects.append(Sphere(Vect(0, -1000, -100), 1000, Vect(150, 130, 140), Vect(0.2, 0.2, 0.2), 0.0))
-        
         print("Rendering scene...")
 
-        self.blitPixels()
-        print("Render time:", timer(startTime))
-        print("Image size:",self.width,self.height)
-        self.image.show()
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            start = time.time()
+            self.parallelShading()
+            self.show()
+            end = time.time()
+            print("frame: ", self.frames, " took ", end - start, " seconds")
+            self.frames += 1
+        
+        pySurface = pygame.surfarray.make_surface(self.surface)
+        pygame.image.save(pySurface, "image.png")
+
+        pygame.quit()
