@@ -228,13 +228,11 @@ class StaticRenderer:
         self.screen.blit(scaledSurface, (0, 0))
 
         pygame.display.flip()
-        
-        
                 
     def render(self):
         self.objects.append(Sphere(Vect(-30, 40, -70), 30, Vect(1,1,1), Vect(1,1,1), 1))
-        self.objects.append(Sphere(Vect(-1, 0, -5), 2, Vect(1, 0.7, 0.1), Vect(1, 0.7, 0.1), 0.6)) 
-        self.objects.append(Sphere(Vect(3.5, -0.5, -5), 1.75, Vect(0.1, 0.1, 0.8), Vect(0.1, 0.1, 0.8), 0.0))  
+        self.objects.append(Sphere(Vect(-1, 0, -5), 2, Vect(245, 66, 182) / 255, Vect(1, 0.7, 0.1), 0.6)) 
+        self.objects.append(Sphere(Vect(3.5, -0.5, -5), 1.75, Vect(66, 179, 245) / 255, Vect(0.1, 0.1, 0.8), 0))  
         self.objects.append(Sphere(Vect(0, -1000, -100), 1000, Vect(0.7, 0.5, 0.6), Vect(0.7, 0.5, 0.6), 0.0))
 
         print("Rendering scene...")
