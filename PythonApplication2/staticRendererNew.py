@@ -136,17 +136,15 @@ class Ray:
         return HitInfo(True, dist, hitPoint, normal, sphere.colour, sphere.emissColour, sphere.emission)
 
 class StaticRenderer:
-    def __init__(self, width, height, camPos):
+    def __init__(self, width, height, camPos, screen):
         self.width = width
         self.height = height
         self.camPos = Vect(camPos[0], camPos[1], camPos[2])
         self.objects = []
         self.accumulationBuffer =  np.full((width, height), Vect(0, 0, 0), dtype=object)
         self.frames = 1
-        self.surface = np.zeros((width, height, 3), dtype=np.uint8) 
-
-        pygame.init()
-        self.screen = pygame.display.set_mode((width * 2, height * 2), pygame.RESIZABLE)
+        self.surface = np.zeros((width, height, 3), dtype=np.uint8)
+        self.screen = screen
 
     @staticmethod
     def findRayHit(objects, ray):
@@ -156,7 +154,6 @@ class StaticRenderer:
                 hitInfo = ray.hitSphere(object)
                 if hitInfo.hit and (hitInfo.dist < closestHit.dist):
                     closestHit = hitInfo
-
         return closestHit
 
     @staticmethod
@@ -191,7 +188,8 @@ class StaticRenderer:
                 ray.direction = bounce 
 
             else:
-                skyColor = Vect(0.05, 0.05, 0.1)
+                skyAmt = (ray.direction.y + 1) / 10
+                skyColor = Vect(skyAmt, skyAmt, skyAmt * 2)
                 light += colour * skyColor
 
                 break
@@ -199,16 +197,23 @@ class StaticRenderer:
         return light
     
     def parallelShading(self):
-        coords = [(self.objects, index % self.width, index // self.width, 3, self.width, self.height) for index in range(self.width * self.height)]
-
-        colors = []
-
-        for coord in coords:
-            colors.append(StaticRenderer.pixelShader(coord))
-
+        coords = [(self.objects, index % self.width, index // self.width, 2, self.width, self.height) for index in range(self.width * self.height)]
+        
+        with Pool() as pool:
+            colors = pool.map(StaticRenderer.pixelShader, coords)
+        
         for coord, color in zip(coords, colors):
             x, y = coord[1], coord[2]
             self.accumulationBuffer[x, y] += color
+        
+        #coords = [(self.objects, index % self.width, index // self.width, 2, self.width, self.height) for index in range(self.width * self.height)]
+        #
+        #with Pool() as pool:
+        #    colors = pool.map(StaticRenderer.pixelShader, coords)
+        #
+        #for coord, color in zip(coords, colors):
+        #    x, y = coord[1], coord[2]
+        #    self.accumulationBuffer[x, y] += color
         
     def show(self):
         generator = ((index % self.width, index // self.width) for index in range(self.width * self.height))
