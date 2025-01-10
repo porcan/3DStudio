@@ -83,28 +83,30 @@ def randomVector() -> Vect:
     return Vect(random.random() * 2 - 1.0, random.random() * 2 - 1.0, random.random() * 2.0 - 1.0)        
     
 class Sphere:
-    def __init__(self, centre: Vect, radius, colour: Vect, emissColour: Vect, emission: float):
+    def __init__(self, centre: Vect, radius, colour: Vect, shine: float, emission: float):
         self.centre = centre
         self.radius = radius
         self.colour = colour
+        self.shine = shine
         self.emission = emission
-        self.emissColour = emissColour
 
 class Triangle:
-    def __init__(self, p1: Vect, p2: Vect, p3: Vect, colour):
+    def __init__(self, p1: Vect, p2: Vect, p3: Vect, colour: Vect, shine: float, emission: float):
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
         self.colour = colour
+        self.shine = shine
+        self.emission = emission
         
 class HitInfo:
-    def __init__(self, hit: bool, dist: float, hitPoint: Vect, normal: Vect, colour: Vect, emissColour: Vect, emission: float):
+    def __init__(self, hit: bool, dist: float, hitPoint: Vect, normal: Vect, colour: Vect, shine: Vect, emission: float):
         self.hit = hit
         self.dist = dist
         self.hitPoint = hitPoint
         self.normal = normal
         self.colour = colour
-        self.emissColour = emissColour
+        self.shine = shine
         self.emission = emission
     
 class Ray:
@@ -116,7 +118,6 @@ class Ray:
         return f"(Origin:{self.origin}, Direction:{self.direction})"
 
     def hitSphere(self, sphere: Sphere): #checks if the ray intersects a given sphere
-        #define a, b, and c as the coefficients in the polynomial
         OC = self.origin - sphere.centre
         a = self.direction.dot(self.direction)  # or self.direction.x**2 + self.direction.y**2 + self.direction.z**2
         b = 2 * self.direction.dot(OC)
@@ -126,15 +127,17 @@ class Ray:
         
         if intersects == False or (intersects[0] < 0 and intersects[1] < 0):
             return HitInfo(False, None, None, None, Vect(1,1,1), Vect(0,0,0), 0)
-    
 
         dist = min(intersects) if intersects[0] > 0 and intersects[1] > 0 else max(intersects)
         
         hitPoint = self.origin + (self.direction * dist)
         normal = (hitPoint - sphere.centre).normalise()
         
-        return HitInfo(True, dist, hitPoint, normal, sphere.colour, sphere.emissColour, sphere.emission)
-
+        return HitInfo(True, dist, hitPoint, normal, sphere.colour, sphere.shine, sphere.emission)
+    
+    def hitTriangle(self, triangle: Triangle):
+        return
+    
 class StaticRenderer:
     def __init__(self, width, height, camPos, screen):
         self.width = width
@@ -167,9 +170,13 @@ class StaticRenderer:
         aspectRatio = width / height
         coord.x *= aspectRatio
 
+        blur = 0.002 #small amount of blur for antialiasing
+        coord += randomVector() * blur
+
         ray = Ray(Vect(0, 0, 0), coord.normalise())
         colour = Vect(1,1,1)
         light  = Vect(0,0,0)
+        cos = 1
 
         for _ in range(maxBounces):
             hitInfo = StaticRenderer.findRayHit(objects, ray)
@@ -179,22 +186,21 @@ class StaticRenderer:
                 
                 ray.origin = hitInfo.hitPoint + hitInfo.normal * 0.01
 
-                #bounce = ray.direction - (hitInfo.normal * 2 * (ray.direction.dot(hitInfo.normal)))
-                #bounce = bounce.normalise()
+                reflect = (ray.direction - (hitInfo.normal * 2 * (ray.direction.dot(hitInfo.normal)))).normalise()
 
-                bounce = randomVector() + hitInfo.normal
-                bounce = bounce.normalise()
+                scatter = (randomVector() + hitInfo.normal).normalise()
+                bounce = ((reflect.normalise() * hitInfo.shine) + (scatter.normalise() * (Vect(1,1,1) - hitInfo.shine)))/2
 
-                ray.direction = bounce 
+                ray.direction = bounce
+                cos = max(hitInfo.normal.dot(ray.direction), 0) * 2
 
             else:
-                skyAmt = (ray.direction.y + 1) / 10
-                skyColor = Vect(skyAmt, skyAmt, skyAmt * 2)
-                light += colour * skyColor
-
+                skyAmt = 0.5 / ((ray.direction.y + 1) ** 2)
+                skyColor = Vect(skyAmt, skyAmt, skyAmt * 1.7)
+                light += colour * skyColor * cos
                 break
 
-        return light
+        return light * 1.5
     
     def parallelShading(self):
         coords = [(self.objects, index % self.width, index // self.width, 2, self.width, self.height) for index in range(self.width * self.height)]
@@ -235,10 +241,12 @@ class StaticRenderer:
         pygame.display.flip()
                 
     def render(self):
-        self.objects.append(Sphere(Vect(-30, 40, -70), 30, Vect(1,1,1), Vect(1,1,1), 1))
-        self.objects.append(Sphere(Vect(-1, 0, -5), 2, Vect(245, 66, 182) / 255, Vect(1, 0.7, 0.1), 0.6)) 
-        self.objects.append(Sphere(Vect(3.5, -0.5, -5), 1.75, Vect(66, 179, 245) / 255, Vect(0.1, 0.1, 0.8), 0))  
-        self.objects.append(Sphere(Vect(0, -1000, -100), 1000, Vect(0.7, 0.5, 0.6), Vect(0.7, 0.5, 0.6), 0.0))
+        self.objects.append(Sphere(Vect(-600, 300, -1500), 500, Vect(1,1,1), 0, 1))
+        self.objects.append(Sphere(Vect(-5.5, -3.5, -13), 1.5, Vect(1,1,1), 0.5, 0))
+        self.objects.append(Sphere(Vect(-1, -3, -13), 2, Vect(1,1,1), 0.9, 0))
+        self.objects.append(Sphere(Vect(4, -2.5, -13), 2.5, Vect(112, 240, 38) / 255, 0, 0.5))
+        self.objects.append(Sphere(Vect(10, -2, -13), 3, Vect(38, 136, 240) / 255, 0, 0))
+        self.objects.append(Sphere(Vect(0, -1000, -5), 995, Vect(200, 200, 200) / 255, 0, 0)) #171, 117, 219
 
         print("Rendering scene...")
 

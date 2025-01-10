@@ -78,10 +78,10 @@ if __name__ == "__main__":
                     print(rt.window.get_width())
                     pygame.quit()
                 
-    #sr = StaticRenderer(0,0,(0,0,0))
     renderInput = None
-    width = 480
-    height = 360
+    resolutions = [(1280,720),
+                   (640,360)]
+    width, height = resolutions[1]
     pygame.init()
-    sr = StaticRenderer(width,height,(0,0,0),pygame.display.set_mode((width * 2, height * 2), pygame.RESIZABLE))
+    sr = StaticRenderer(width,height,(0,0,0),pygame.display.set_mode((width * 1.5, height * 1.5), pygame.RESIZABLE))
     sr.render()
