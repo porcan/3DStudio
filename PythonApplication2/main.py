@@ -1,14 +1,31 @@
 import time
 import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ""
 import pygame
 from sys import exit
 from realtimeRenderer import *
-from staticRendererNew import *
+from staticRenderer import *
 from utilities import *
 
 if __name__ == "__main__":
 
+
+    # octTree = OctTree(2000,1)
+    # for i in range(20):
+    #     octTree.insertData(Vect(random.random(), random.random(), random.random()) * 1000, random.randint(1,100000))
+    # octTree.insertData(Vect(0,0,5), "hhh")
+    # ray = Ray(Vect(0,0,0), Vect(0,0,-1))
+    # print(octTree.getObjects(ray))
+
+
+
+
+
+
+
+
+
+    # a = 1/0
     state = "setup" #states: setup, editor, rendering
 
     pygame.init()
@@ -53,10 +70,10 @@ if __name__ == "__main__":
     state = "rendering"
     #state = "editor"
 
+    polygons = unnest(rt.setup(loadedObj))
     while state == "editor":
         rt.update()
-        polygons = rt.setup(loadedObj)
-        rt.render(unnest(polygons))
+        rt.render(polygons)
     
         pygame.display.flip()
         rt.clock.tick()
@@ -75,13 +92,15 @@ if __name__ == "__main__":
                     rt.eyeShowHide()
                 if event.key == pygame.K_r:
                     state = "rendering"
-                    print(rt.window.get_width())
                     pygame.quit()
                 
     renderInput = None
     resolutions = [(1280,720),
                    (640,360)]
+    
     width, height = resolutions[1]
+    windowSize = (960,540)
+
     pygame.init()
-    sr = StaticRenderer(width,height,(0,0,0),pygame.display.set_mode((width * 1.5, height * 1.5), pygame.RESIZABLE))
+    sr = StaticRenderer(width,height,(0,0,0),pygame.display.set_mode(windowSize, pygame.RESIZABLE),polygons)
     sr.render()
