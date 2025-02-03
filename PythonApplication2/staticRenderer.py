@@ -92,33 +92,32 @@ class StaticRenderer:
         self.width = width
         self.height = height
         self.camPos = Vect(camPos[0], camPos[1], camPos[2])
-        self.objects = OctTree(2000,2)
+        self.objects = []#OctTree(2000,3)
         self.accumulationBuffer =  np.full((width, height), Vect(0, 0, 0), dtype=object)
         self.frames = 1
         self.surface = np.zeros((width, height, 3), dtype=np.uint8)
         self.screen = screen
         coordRatio = 0.25
         zOffset = -250
-        for triangle in meshIn:
-            self.objects.insertData(Vect((triangle.x1 + triangle.x2 + triangle.x3) / 3,
-                                         (triangle.y1 + triangle.y2 + triangle.y3) / 3,
-                                         (triangle.z1 + triangle.z2 + triangle.z3) / 3),
-                                     Triangle(Vect(triangle.x1, triangle.y1, triangle.z1 + zOffset) * coordRatio, 
-                                         Vect(triangle.x2, triangle.y2, triangle.z2 + zOffset) * coordRatio, 
-                                         Vect(triangle.x3, triangle.y3, triangle.z3 + zOffset) * coordRatio, 
-                                         Vect(triangle.colour[0], triangle.colour[1], triangle.colour[2]), 0, 0))
+        # for triangle in meshIn:
+        #     self.objects.insertData(Vect((triangle.x1 + triangle.x2 + triangle.x3) / 3,
+        #                                  (triangle.y1 + triangle.y2 + triangle.y3) / 3,
+        #                                  (triangle.z1 + triangle.z2 + triangle.z3) / 3),
+        #                              Triangle(Vect(triangle.x1, triangle.y1, triangle.z1 + zOffset) * coordRatio, 
+        #                                  Vect(triangle.x2, triangle.y2, triangle.z2 + zOffset) * coordRatio, 
+        #                                  Vect(triangle.x3, triangle.y3, triangle.z3 + zOffset) * coordRatio, 
+        #                                  Vect(triangle.colour[0], triangle.colour[1], triangle.colour[2]), 0, 0))
             
     @staticmethod
     def findRayHit(objects, ray):
         closestHit = HitInfo(None, float("inf"), None, None, Vect(0,0,0), Vect(0,0,0), 0)
 
-        #objects is an octree, need to octree things here
-        filteredObjects = objects.getObjects(ray)
-        for obj in filteredObjects:
-            if type(obj[0]) == Sphere:
-                hitInfo = ray.hitSphere(obj[0])
-            elif type(obj[0]) == Triangle:
-                hitInfo = ray.hitTriangle(obj[0])
+        #filteredObjects = objects.getObjects(ray)
+        for obj in objects:
+            if type(obj) == Sphere:
+                hitInfo = ray.hitSphere(obj)
+            elif type(obj) == Triangle:
+                hitInfo = ray.hitTriangle(obj)
 
             if hitInfo.hit and (hitInfo.dist < closestHit.dist):
                 closestHit = hitInfo
@@ -199,55 +198,56 @@ class StaticRenderer:
         pygame.display.flip()
                 
     def render(self):
-        objectList = []
-        objectList.append(Sphere(Vect(-600, 300, -1500), 500, Vect(1,1,1), 0, 1))
+        self.objects = []
+        self.objects.append(Sphere(Vect(-600, 300, -1500), 500, Vect(1,1,1), 0, 1))
         # objectList.append(Triangle(Vect(-6, -3.5, -13), 
         #                              Vect(-4, -3.5, -13), 
         #                              Vect(-5, 0, -13), Vect(1,1,1), 0.5, 0))
         # objectList.append(Sphere(Vect(-1, -3, -13), 2, Vect(1,1,1), 0.9, 0))
         # objectList.append(Sphere(Vect(4, -2.5, -13), 2.5, Vect(112, 240, 38) / 255, 0, 0.5))
         # objectList.append(Sphere(Vect(10, -2, -13), 3, Vect(38, 136, 240) / 255, 0, 0))
-        objectList.append(Sphere(Vect(0, -1000, -5), 995, Vect(171, 117, 219) / 255, 0.5, 0))
+        self.objects.append(Sphere(Vect(0, -1000, -5), 995, Vect(171, 117, 219) / 255, 0.5, 0))
         
-        objectList.append(Triangle(Vect(4.4, -2.4, -13), #abc
+        self.objects.append(Triangle(Vect(4.4, -2.4, -13), #abc
                                      Vect(0.5, 0, -5), 
                                      Vect(-7.75, -4.6, -15), Vect(1,1,1), 0.5, 0))
-        objectList.append(Triangle(Vect(-7.75, -4.6, -15), #abd
+        self.objects.append(Triangle(Vect(-7.75, -4.6, -15), #abd
                                      Vect(0.5, 0, -5), 
                                      Vect(0.85, 4, -15), Vect(1,1,1), 0.5, 0))
-        objectList.append(Triangle(Vect(0.85, 4, -15), #dbc
+        self.objects.append(Triangle(Vect(0.85, 4, -15), #dbc
                                      Vect(0.5, 0, -5), 
                                      Vect(4.4, -2.4, -13), Vect(1,1,1), 0.5, 0))
         
         tVect = Vect(20,5,0)
-        objectList.append(Triangle(Vect(4.4, -2.4, -13) + tVect, #abc
+        self.objects.append(Triangle(Vect(4.4, -2.4, -13) + tVect, #abc
                                      Vect(0.5, 0, -5) + tVect, 
                                      Vect(-7.75, -4.6, -15) + tVect, Vect(1,1,1), 0.5, 0))
-        objectList.append(Triangle(Vect(-7.75, -4.6, -15) + tVect, #abd
+        self.objects.append(Triangle(Vect(-7.75, -4.6, -15) + tVect, #abd
                                      Vect(0.5, 0, -5) + tVect, 
                                      Vect(0.85, 4, -15) + tVect, Vect(1,1,1), 0.5, 0))
-        objectList.append(Triangle(Vect(0.85, 4, -15) + tVect, #dbc
+        self.objects.append(Triangle(Vect(0.85, 4, -15) + tVect, #dbc
                                      Vect(0.5, 0, -5) + tVect, 
                                      Vect(4.4, -2.4, -13) + tVect, Vect(1,1,1), 0.5, 0))
         
-        objectList.append(Triangle(Vect(4.4, -2.4, -13) - tVect, #abc
+        self.objects.append(Triangle(Vect(4.4, -2.4, -13) - tVect, #abc
                                      Vect(0.5, 0, -5) - tVect, 
                                      Vect(-7.75, -4.6, -15) - tVect, Vect(1,1,1), 0, 0))
-        objectList.append(Triangle(Vect(-7.75, -4.6, -15) - tVect, #abd
+        self.objects.append(Triangle(Vect(-7.75, -4.6, -15) - tVect, #abd
                                      Vect(0.5, 0, -5) - tVect, 
                                      Vect(0.85, 4, -15) - tVect, Vect(1,1,1), 0, 0))
-        objectList.append(Triangle(Vect(0.85, 4, -15) - tVect, #dbc
+        self.objects.append(Triangle(Vect(0.85, 4, -15) - tVect, #dbc
                                      Vect(0.5, 0, -5) - tVect, 
                                      Vect(4.4, -2.4, -13) - tVect, Vect(1,1,1), 0, 0))
         
-        objectList.append(Sphere(Vect(8, -2.5, -13), 2.5, Vect(235, 149, 52) / 255, 0, 1))
-        objectList.append(Sphere(Vect(-10, -2.5, -13), 2.5, Vect(38, 136, 240) / 255, 0, 1))
+        self.objects.append(Sphere(Vect(8, -2.5, -13), 2.5, Vect(235, 149, 52) / 255, 0, 1))
+        self.objects.append(Sphere(Vect(-10, -2.5, -13), 2.5, Vect(38, 136, 240) / 255, 0, 1))
 
-        for item in objectList:
-            if type(item) == Sphere:
-                self.objects.insertData(item.centre, item)
-            elif type(item) == Triangle:
-                self.objects.insertData((item.p1 + item.p2 + item.p3) / 3, item)
+        # for item in objectList:
+            # if type(item) == Sphere:
+            #     self.objects.insertData(item.centre, item)
+            # elif type(item) == Triangle:
+            #     self.objects.insertData((item.p1 + item.p2 + item.p3) / 3, item)
+        #quit()
 
         print("Rendering scene...")
 

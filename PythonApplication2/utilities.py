@@ -2,6 +2,7 @@ import time
 import math
 import numpy
 import sys
+import random
 
 class Vect: #class for a 3D vector
     def __init__(self, x: float | int, y: float | int, z: float | int):
@@ -75,9 +76,6 @@ class Vect: #class for a 3D vector
     
     def returnArray(self):
         return [self.x, self.y, self.z]
-    
-
-
 
 class OctNode:
     def __init__(self, position: Vect, radius: float, depth: int, data):
@@ -125,7 +123,7 @@ class OctNode:
         
         tEntry = numpy.max(t1)
         tExit = numpy.min(t2)
-        return tEntry <= tExit and tExit >= 0
+        return (tEntry <= tExit and tExit >= 0)
 
 class OctTree:
     def __init__(self, sceneRadius, maxDepth):
@@ -139,6 +137,9 @@ class OctTree:
         locationArray = location.returnArray()
         maxArray = node.max.returnArray()
         minArray = node.min.returnArray()
+        #children (xyz):
+        #0: +++   1: ++-   2: -+-   3: -++
+        #4: +-+   5: +--   6: ---   7: --+
         for i in range(self.maxDepth + 1):
             if numpy.any(locationArray < minArray) or numpy.any(locationArray > maxArray):
                 return False
@@ -148,7 +149,7 @@ class OctTree:
                 node = node.children[1]
             elif location.x < node.position.x and location.y > node.position.y and location.z < node.position.z:
                 node = node.children[2]
-            elif location.x > node.position.x and location.y > node.position.y and location.z > node.position.z:
+            elif location.x < node.position.x and location.y > node.position.y and location.z > node.position.z:
                 node = node.children[3]
             elif location.x > node.position.x and location.y < node.position.y and location.z > node.position.z:
                 node = node.children[4]
@@ -175,11 +176,6 @@ class OctTree:
     def getObjects(self, ray):
         return unnest(self.rayCheck(self.root, ray, []))
         
-        
-
-        
-
-
 def timer(startTime):
     return time.perf_counter() - startTime
 
