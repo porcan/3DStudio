@@ -99,14 +99,14 @@ class StaticRenderer:
         self.screen = screen
         coordRatio = 0.25
         zOffset = -250
-        # for triangle in meshIn:
-        #     self.objects.insertData(Vect((triangle.x1 + triangle.x2 + triangle.x3) / 3,
-        #                                  (triangle.y1 + triangle.y2 + triangle.y3) / 3,
-        #                                  (triangle.z1 + triangle.z2 + triangle.z3) / 3),
-        #                              Triangle(Vect(triangle.x1, triangle.y1, triangle.z1 + zOffset) * coordRatio, 
-        #                                  Vect(triangle.x2, triangle.y2, triangle.z2 + zOffset) * coordRatio, 
-        #                                  Vect(triangle.x3, triangle.y3, triangle.z3 + zOffset) * coordRatio, 
-        #                                  Vect(triangle.colour[0], triangle.colour[1], triangle.colour[2]), 0, 0))
+        for triangle in meshIn:
+            self.objects.insertData(Vect((triangle.x1 + triangle.x2 + triangle.x3) / 3,
+                                         (triangle.y1 + triangle.y2 + triangle.y3) / 3,
+                                         (triangle.z1 + triangle.z2 + triangle.z3) / 3),
+                                     Triangle(Vect(triangle.x1, triangle.y1, triangle.z1 + zOffset) * coordRatio, 
+                                         Vect(triangle.x2, triangle.y2, triangle.z2 + zOffset) * coordRatio, 
+                                         Vect(triangle.x3, triangle.y3, triangle.z3 + zOffset) * coordRatio, 
+                                         Vect(triangle.colour[0], triangle.colour[1], triangle.colour[2]), 0, 0))
             
     @staticmethod
     def findRayHit(objects, ray):
@@ -161,8 +161,10 @@ class StaticRenderer:
                 cos = max(hitInfo.normal.dot(ray.direction), 0) * 2
 
             else:
-                skyAmt = 0.5 / ((ray.direction.y + 1) ** 2)
-                skyColor = Vect(skyAmt, skyAmt, skyAmt * 1.7)
+                skyAmbience = (1.5,1.3,1) #standard 1,1,1.7
+                darkness = 0.5 #standard 0.5
+                skyAmt = darkness / ((ray.direction.y + 1) ** 2)
+                skyColor = Vect(skyAmt * skyAmbience[0], skyAmt * skyAmbience[1], skyAmt  * skyAmbience[2])
                 light += colour * skyColor * cos
                 break
 
@@ -199,48 +201,70 @@ class StaticRenderer:
                 
     def render(self):
         self.objects = []
-        self.objects.append(Sphere(Vect(-600, 300, -1500), 500, Vect(1,1,1), 0, 1))
-        # objectList.append(Triangle(Vect(-6, -3.5, -13), 
-        #                              Vect(-4, -3.5, -13), 
-        #                              Vect(-5, 0, -13), Vect(1,1,1), 0.5, 0))
-        # objectList.append(Sphere(Vect(-1, -3, -13), 2, Vect(1,1,1), 0.9, 0))
-        # objectList.append(Sphere(Vect(4, -2.5, -13), 2.5, Vect(112, 240, 38) / 255, 0, 0.5))
-        # objectList.append(Sphere(Vect(10, -2, -13), 3, Vect(38, 136, 240) / 255, 0, 0))
-        self.objects.append(Sphere(Vect(0, -1000, -5), 995, Vect(171, 117, 219) / 255, 0.5, 0))
+        self.objects.append(Sphere(Vect(-600, 300, -1500), 500, Vect(1,1,1), 0, 1)) #main "sun"
+        self.objects.append(Sphere(Vect(0, -1000, -5), 995, Vect(100,100,100) / 255, 0.5, 0)) #main "ground" 171, 117, 219
+
+        self.objects.append(Sphere(Vect(-1, -3, -13), 2, Vect(1,1,1), 0.9, 0))
+        self.objects.append(Sphere(Vect(4, -2.5, -13), 2.5, Vect(255, 52, 80) / 255, 0, 0.5))
+        self.objects.append(Sphere(Vect(10, -2, -13), 3, Vect(38, 136, 240) / 255, 0, 0))
+
         
-        self.objects.append(Triangle(Vect(4.4, -2.4, -13), #abc
-                                     Vect(0.5, 0, -5), 
-                                     Vect(-7.75, -4.6, -15), Vect(1,1,1), 0.5, 0))
-        self.objects.append(Triangle(Vect(-7.75, -4.6, -15), #abd
-                                     Vect(0.5, 0, -5), 
-                                     Vect(0.85, 4, -15), Vect(1,1,1), 0.5, 0))
-        self.objects.append(Triangle(Vect(0.85, 4, -15), #dbc
-                                     Vect(0.5, 0, -5), 
-                                     Vect(4.4, -2.4, -13), Vect(1,1,1), 0.5, 0))
+
+        # self.objects.append(Triangle(Vect(4.4, -2.4, -13), #abc
+        #                              Vect(0.5, 0, -5), 
+        #                              Vect(-7.75, -4.6, -15), Vect(1,1,1), 0.5, 0))
+        # self.objects.append(Triangle(Vect(-7.75, -4.6, -15), #abd
+        #                              Vect(0.5, 0, -5), 
+        #                              Vect(0.85, 4, -15), Vect(1,1,1), 0.5, 0))
+        # self.objects.append(Triangle(Vect(0.85, 4, -15), #dbc
+        #                              Vect(0.5, 0, -5), 
+        #                              Vect(4.4, -2.4, -13), Vect(1,1,1), 0.5, 0))
         
-        tVect = Vect(20,5,0)
-        self.objects.append(Triangle(Vect(4.4, -2.4, -13) + tVect, #abc
-                                     Vect(0.5, 0, -5) + tVect, 
-                                     Vect(-7.75, -4.6, -15) + tVect, Vect(1,1,1), 0.5, 0))
-        self.objects.append(Triangle(Vect(-7.75, -4.6, -15) + tVect, #abd
-                                     Vect(0.5, 0, -5) + tVect, 
-                                     Vect(0.85, 4, -15) + tVect, Vect(1,1,1), 0.5, 0))
-        self.objects.append(Triangle(Vect(0.85, 4, -15) + tVect, #dbc
-                                     Vect(0.5, 0, -5) + tVect, 
-                                     Vect(4.4, -2.4, -13) + tVect, Vect(1,1,1), 0.5, 0))
+        # tVect = Vect(20,5,0)
+        # self.objects.append(Triangle(Vect(4.4, -2.4, -13) + tVect, #abc
+        #                              Vect(0.5, 0, -5) + tVect, 
+        #                              Vect(-7.75, -4.6, -15) + tVect, Vect(1,1,1), 0.5, 0))
+        # self.objects.append(Triangle(Vect(-7.75, -4.6, -15) + tVect, #abd
+        #                              Vect(0.5, 0, -5) + tVect, 
+        #                              Vect(0.85, 4, -15) + tVect, Vect(1,1,1), 0.5, 0))
+        # self.objects.append(Triangle(Vect(0.85, 4, -15) + tVect, #dbc
+        #                              Vect(0.5, 0, -5) + tVect, 
+        #                              Vect(4.4, -2.4, -13) + tVect, Vect(1,1,1), 0.5, 0))
         
-        self.objects.append(Triangle(Vect(4.4, -2.4, -13) - tVect, #abc
-                                     Vect(0.5, 0, -5) - tVect, 
-                                     Vect(-7.75, -4.6, -15) - tVect, Vect(1,1,1), 0, 0))
-        self.objects.append(Triangle(Vect(-7.75, -4.6, -15) - tVect, #abd
-                                     Vect(0.5, 0, -5) - tVect, 
-                                     Vect(0.85, 4, -15) - tVect, Vect(1,1,1), 0, 0))
-        self.objects.append(Triangle(Vect(0.85, 4, -15) - tVect, #dbc
-                                     Vect(0.5, 0, -5) - tVect, 
-                                     Vect(4.4, -2.4, -13) - tVect, Vect(1,1,1), 0, 0))
+        # self.objects.append(Triangle(Vect(4.4, -2.4, -13) - tVect, #abc
+        #                              Vect(0.5, 0, -5) - tVect, 
+        #                              Vect(-7.75, -4.6, -15) - tVect, Vect(1,1,1), 0, 0))
+        # self.objects.append(Triangle(Vect(-7.75, -4.6, -15) - tVect, #abd
+        #                              Vect(0.5, 0, -5) - tVect, 
+        #                              Vect(0.85, 4, -15) - tVect, Vect(1,1,1), 0, 0))
+        # self.objects.append(Triangle(Vect(0.85, 4, -15) - tVect, #dbc
+        #                              Vect(0.5, 0, -5) - tVect, 
+        #                              Vect(4.4, -2.4, -13) - tVect, Vect(1,1,1), 0, 0))
         
-        self.objects.append(Sphere(Vect(8, -2.5, -13), 2.5, Vect(235, 149, 52) / 255, 0, 1))
-        self.objects.append(Sphere(Vect(-10, -2.5, -13), 2.5, Vect(38, 136, 240) / 255, 0, 1))
+        # self.objects.append(Sphere(Vect(8, -2.5, -13), 2.5, Vect(235, 149, 52) / 255, 0, 1))
+        # self.objects.append(Sphere(Vect(-10, -2.5, -13), 2.5, Vect(38, 136, 240) / 255, 0, 1))
+
+
+
+        # self.objects.append(Sphere(Vect(-200, 0, -1500), 500, Vect(1,1,1), 0, 1))
+
+        # self.objects.append(Triangle(Vect(-5, 0, -15), #abc
+        #                              Vect(0, 0, -10), 
+        #                              Vect(0, 10, -15), Vect(219, 117, 171) / 255, 0, 0))
+        # self.objects.append(Triangle(Vect(0, 0, -10), #bcd
+        #                              Vect(0, 10, -15), 
+        #                              Vect(5, 0, -15), Vect(1,1,1), 0, 0))
+        # self.objects.append(Triangle(Vect(-5, 0, -15), #abe
+        #                              Vect(0, 0, -10), 
+        #                              Vect(0, -10, -15), Vect(1,1,1), 0, 0))
+        # self.objects.append(Triangle(Vect(0, 0, -10), #bed
+        #                              Vect(0, -10, -15), 
+        #                              Vect(5, 0, -15), Vect(1,1,1), 0, 1))
+
+        # self.objects.append(Sphere(Vect(0, -1000, -5), 995, Vect(219, 117, 171) / 255, 0.75, 0))
+        # self.objects.append(Sphere(Vect(-4, -4, -13), 1, Vect(0.2,0.05,0.05), 0, 0))
+
+
 
         # for item in objectList:
             # if type(item) == Sphere:
