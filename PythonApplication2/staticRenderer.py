@@ -103,10 +103,10 @@ class StaticRenderer:
             self.objects.insertData(Vect((triangle.x1 + triangle.x2 + triangle.x3) / 3,
                                          (triangle.y1 + triangle.y2 + triangle.y3) / 3,
                                          (triangle.z1 + triangle.z2 + triangle.z3) / 3),
-                                     Triangle(Vect(triangle.x1, triangle.y1, triangle.z1 + zOffset) * coordRatio, 
-                                         Vect(triangle.x2, triangle.y2, triangle.z2 + zOffset) * coordRatio, 
-                                         Vect(triangle.x3, triangle.y3, triangle.z3 + zOffset) * coordRatio, 
-                                         Vect(triangle.colour[0], triangle.colour[1], triangle.colour[2]), 0, 0))
+                                    Triangle(Vect(triangle.x1, triangle.y1, triangle.z1 + zOffset) * coordRatio, 
+                                        Vect(triangle.x2, triangle.y2, triangle.z2 + zOffset) * coordRatio, 
+                                        Vect(triangle.x3, triangle.y3, triangle.z3 + zOffset) * coordRatio, 
+                                        Vect(triangle.colour[0], triangle.colour[1], triangle.colour[2]), 0, 0))
             
     @staticmethod
     def findRayHit(objects, ray):
@@ -161,10 +161,10 @@ class StaticRenderer:
                 cos = max(hitInfo.normal.dot(ray.direction), 0) * 2
 
             else:
-                skyAmbience = (1.5,1.3,1) #standard 1,1,1.7
-                darkness = 0.5 #standard 0.5
-                skyAmt = darkness / ((ray.direction.y + 1) ** 2)
-                skyColor = Vect(skyAmt * skyAmbience[0], skyAmt * skyAmbience[1], skyAmt  * skyAmbience[2])
+                skyTint = (1.5,1.3,1) #standard 1,1,1.7
+                skyLight = 0.5 #standard 0.5
+                skyAmt = skyLight / ((ray.direction.y + 1) ** 2)
+                skyColor = Vect(skyAmt * skyTint[0], skyAmt * skyTint[1], skyAmt  * skyTint[2])
                 light += colour * skyColor * cos
                 break
 

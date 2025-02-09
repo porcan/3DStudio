@@ -9,7 +9,6 @@ from utilities import *
 import pygame_gui as gui
 
 if __name__ == "__main__":
-
     pygame.init()
     pygame.font.init()
     pygame.display.set_caption("3D Studio - Main Menu")
@@ -81,29 +80,12 @@ if __name__ == "__main__":
     openEditorButton.hide()
     quitButton.hide()
 
-    # opt = int(input("Renderer Main Menu\n1 - Run demo\n2 - Load file\n3 - Open editor"))
-    # if opt == 2:
-    #     obj = input("File to load: ")
-    #     sf = float(input("SF: "))
-    #     shapes = (obj, sf)
-    # else:
-    #     shapes = (0, 0)
-    # if not opt == 1:
-    #     camPos = input("Camera position: ")
-    #     camPos = tuple(int(x) for x in camPos.split(","))
-    #     baseCamX, baseCamY, baseCamZ = camPos
-    #     lightPos = input("Light source (CAM for camera): ")
-    # else:
-    #     baseCamX, baseCamY, baseCamZ = 0, 0, 1000
-    #     lightPos = "CAM"
-    # if not lightPos == "CAM":
-    #     lightPos = tuple(int(y) for y in lightPos.split(","))
-    
-    # polyGoal = int(input("Polygon display limit (reccommended 1000): "))
-
     count = 0
     focalLength = 300
-    rt = RealtimeRenderer(window, focalLength, clock, baseCamX, baseCamY, baseCamZ, polyGoal, lightPos)
+    skyTint = (1.5,1.3,1) #standard 1,1,1.7
+    skyLight = 0.5
+    globalTranslate = (490,0,0)
+    rt = RealtimeRenderer(window, focalLength, clock, baseCamX, baseCamY, baseCamZ, polyGoal, lightPos, skyTint, skyLight, globalTranslate)
 
     startTime = time.perf_counter()
 
@@ -114,8 +96,13 @@ if __name__ == "__main__":
 
     rt.update()
 
-    #state = "editor"
+    state = "editor"
     pygame.display.set_caption("3D Studio - Editor")
+
+    renderButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 37), (100, 50)), text = "Render", manager = guiManager)
+    editSkyButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 103), (100, 50)), text = "Edit Sky", manager = guiManager)
+    addShapeButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 169), (100, 50)), text = "Add Shape", manager = guiManager)
+    quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 456), (100, 50)), text = "Quit", manager = guiManager)
 
     polygons = unnest(rt.setup(loadedObj))
     while state == "editor":
@@ -126,6 +113,18 @@ if __name__ == "__main__":
 
         rt.update()
         rt.render(polygons)
+        pygame.draw.rect(window, (17, 16, 33), pygame.Rect(0, 0, 170, winHeight))
+        font = pygame.font.SysFont("calibri", 32)
+        text1 = font.render("Camera position: " + str(round(rt.camX)) + ", " + str(round(rt.camY)) + ", " + str(round(rt.camZ)), True, (255, 255, 255))
+        text1Pos = text1.get_rect()
+        text1Pos.topleft = (180, 10)
+
+        text3 = font.render("FPS: " + str(round(rt.clock.get_fps())), True, (255, 255, 255))
+        text3Pos = text3.get_rect()
+        text3Pos.topleft = (180, 100)
+        window.blit(text1, text1Pos)
+
+        window.blit(text3, text3Pos) #writing data to screen as text
     
         guiManager.update(time_delta)
         guiManager.draw_ui(window)
@@ -139,9 +138,13 @@ if __name__ == "__main__":
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_c:
                     rt.eyeShowHide()
-                if event.key == pygame.K_r:
+            if event.type == gui.UI_BUTTON_PRESSED:
+                if event.ui_element == renderButton:
+                    runDemoButton.kill()
                     state = "rendering"
-                    # pygame.quit()
+                elif event.ui_element == quitButton:
+                    quit()
+            guiManager.process_events(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
