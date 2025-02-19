@@ -98,15 +98,18 @@ class StaticRenderer:
         self.surface = np.zeros((width, height, 3), dtype=np.uint8)
         self.screen = screen
         coordRatio = 0.25
-        zOffset = -250
-        for triangle in meshIn:
-            self.objects.insertData(Vect((triangle.x1 + triangle.x2 + triangle.x3) / 3,
-                                         (triangle.y1 + triangle.y2 + triangle.y3) / 3,
-                                         (triangle.z1 + triangle.z2 + triangle.z3) / 3),
-                                    Triangle(Vect(triangle.x1, triangle.y1, triangle.z1 + zOffset) * coordRatio, 
-                                        Vect(triangle.x2, triangle.y2, triangle.z2 + zOffset) * coordRatio, 
-                                        Vect(triangle.x3, triangle.y3, triangle.z3 + zOffset) * coordRatio, 
-                                        Vect(triangle.colour[0], triangle.colour[1], triangle.colour[2]), 0, 0))
+        zOffset = -50
+        for shape in meshIn:
+            if shape.rtArgs[0] == "Triangle":
+                self.objects.append(Triangle(Vect(shape.x1 * coordRatio, (0 - shape.y1) * coordRatio, (shape.z1 * coordRatio) + zOffset), 
+                                             Vect(shape.x2 * coordRatio, (0 - shape.y2) * coordRatio, (shape.z2 * coordRatio) + zOffset), 
+                                             Vect(shape.x3 * coordRatio, (0 - shape.y3) * coordRatio, (shape.z3 * coordRatio) + zOffset), 
+                                             Vect(shape.colour[0], shape.colour[1], shape.colour[2]), shape.rtArgs[1], shape.rtArgs[2]))
+            elif shape.rtArgs[0] == "Sphere":
+                self.objects.append(Sphere(Vect(shape.x * coordRatio, (0 - shape.y) * coordRatio, (shape.z * coordRatio) + zOffset),
+                                          shape.radius * coordRatio,
+                                          Vect(shape.colour[0], shape.colour[1], shape.colour[2]), shape.rtArgs[1], shape.rtArgs[2]))
+                
             
     @staticmethod
     def findRayHit(objects, ray):
@@ -127,9 +130,9 @@ class StaticRenderer:
     @staticmethod
     def pixelShader(args):
         objects, x, y, maxBounces, width, height = args
-        coord   = Vect(x, height - y, 1.0)
-        coord  /= Vect(width, height, 1.0)
-        coord   = coord * 2 - 1
+        coord = Vect(x, height - y, 1.0)
+        coord /= Vect(width, height, 1.0)
+        coord = coord * 2 - 1
         coord.z = -1.0
 
         aspectRatio = width / height
@@ -161,7 +164,7 @@ class StaticRenderer:
                 cos = max(hitInfo.normal.dot(ray.direction), 0) * 2
 
             else:
-                skyTint = (1.5,1.3,1) #standard 1,1,1.7
+                skyTint = (1,1,1.7) #standard 1,1,1.7 1.5,1.3,1
                 skyLight = 0.5 #standard 0.5
                 skyAmt = skyLight / ((ray.direction.y + 1) ** 2)
                 skyColor = Vect(skyAmt * skyTint[0], skyAmt * skyTint[1], skyAmt  * skyTint[2])
@@ -200,13 +203,13 @@ class StaticRenderer:
         pygame.display.flip()
                 
     def render(self):
-        self.objects = []
-        self.objects.append(Sphere(Vect(-600, 300, -1500), 500, Vect(1,1,1), 0, 1)) #main "sun"
+        # self.objects = []
+        # self.objects.append(Sphere(Vect(-600, 300, -1500), 500, Vect(1,1,1), 0, 1)) #main "sun"
         self.objects.append(Sphere(Vect(0, -1000, -5), 995, Vect(100,100,100) / 255, 0.5, 0)) #main "ground" 171, 117, 219
 
-        self.objects.append(Sphere(Vect(-1, -3, -13), 2, Vect(1,1,1), 0.9, 0))
-        self.objects.append(Sphere(Vect(4, -2.5, -13), 2.5, Vect(255, 52, 80) / 255, 0, 0.5))
-        self.objects.append(Sphere(Vect(10, -2, -13), 3, Vect(38, 136, 240) / 255, 0, 0))
+        # self.objects.append(Sphere(Vect(-1, -3, -13), 2, Vect(1,1,1), 0.9, 0))
+        # self.objects.append(Sphere(Vect(4, -2.5, -13), 2.5, Vect(255, 52, 80) / 255, 0, 0.5))
+        # self.objects.append(Sphere(Vect(10, -2, -13), 3, Vect(38, 136, 240) / 255, 0, 0))
 
         
 
