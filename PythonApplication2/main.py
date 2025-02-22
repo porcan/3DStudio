@@ -31,6 +31,10 @@ if __name__ == "__main__":
     sfInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 278), (150, 50)), manager = guiManager, visible = 0)
     uiInputData = {fileInput : "",
                    sfInput : ""}
+    
+    colourRSlider = gui.elements.UIHorizontalSlider(relative_rect = pygame.Rect((155, 287), (100, 19)), start_value = 0, value_range = (0,255), manager = guiManager, visible = 0)
+    colourGSlider = gui.elements.UIHorizontalSlider(relative_rect = pygame.Rect((155, 287 + 16), (100, 19)), start_value = 0, value_range = (0,255), manager = guiManager, visible = 0)
+    colourBSlider = gui.elements.UIHorizontalSlider(relative_rect = pygame.Rect((155, 287 + 32), (100, 19)), start_value = 0, value_range = (0,255), manager = guiManager, visible = 0)
 
     state = "setup" #states: setup, editor, rendering
     background = bg_mainmenu
@@ -121,7 +125,8 @@ if __name__ == "__main__":
     startTime = time.perf_counter()
 
     objColour = normaliseRGB((255, 92, 0))
-    loadedObj = rt.load(shapes[0],shapes[1], objColour)
+    rtArgs = ["Triangle", 0, 0]
+    loadedObj = rt.load(shapes[0],shapes[1], objColour, rtArgs)
 
     rt.placeEye(0,0,150,(200,200))
 

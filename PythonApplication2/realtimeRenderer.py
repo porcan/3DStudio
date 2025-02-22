@@ -76,6 +76,24 @@ def extractSpheres(list):
             extracted.append(item)
     return extracted
 
+def xRotate(x, y, z, deg): #calculates rotation of a point around x axis
+        newX = x
+        newY = (y * math.cos(deg)) - (z * math.sin(deg))
+        newZ = (y * math.sin(deg)) + (z * math.cos(deg))
+        return newX, newY, newZ
+
+def yRotate(x, y, z, deg): #calculates rotation of a point around y axis
+    newX = (z * math.sin(deg)) + (x * math.cos(deg))
+    newY = y
+    newZ = (z * math.cos(deg)) - (x * math.sin(deg))
+    return newX, newY, newZ
+
+def zRotate(x, y, z, deg): #calculates rotation of a point around z axis
+    newX = (x * math.cos(deg)) - (y * math.sin(deg))
+    newY = (x * math.sin(deg)) + (y * math.cos(deg))
+    newZ = z
+    return newX, newY, newZ
+
 class RealtimeRenderer:
     def __init__(self, window, focalLength, clock, baseCamX, baseCamY, baseCamZ, polyGoal, lightPos, skyTint, skyLight, globalTranslate, demoMode):
         self.window = window
@@ -109,9 +127,9 @@ class RealtimeRenderer:
         self.mouseY /= 10
         self.xRotation, self.yRotation, self.zRotation = self.globalRotate()
         
-        self.camX, self.camY, self.camZ = self.yRotate(self.baseCamX, self.baseCamY, self.baseCamZ, self.yRotation)
-        self.camX, self.camY, self.camZ = self.xRotate(self.camX, self.camY, self.camZ, self.xRotation)
-        self.camX, self.camY, self.camZ = self.zRotate(self.camX, self.camY, self.camZ, self.zRotation)
+        self.camX, self.camY, self.camZ = yRotate(self.baseCamX, self.baseCamY, self.baseCamZ, self.yRotation)
+        self.camX, self.camY, self.camZ = xRotate(self.camX, self.camY, self.camZ, self.xRotation)
+        self.camX, self.camY, self.camZ = zRotate(self.camX, self.camY, self.camZ, self.zRotation)
         self.camX = 0 - self.camX
         self.camY = 0 - self.camY
         
@@ -141,9 +159,9 @@ class RealtimeRenderer:
             self.eye[4] = True
 
     def project(self,x,y,z): #calculates 2d projection x and y of a point in 3d space, applying global rotation values
-        dX, dY, dZ = self.xRotate(x, y, z, self.xRotation)
-        dX, dY, dZ = self.yRotate(dX, dY, dZ, self.yRotation)
-        dX, dY, dZ = self.zRotate(dX, dY, dZ, self.zRotation)
+        dX, dY, dZ = xRotate(x, y, z, self.xRotation)
+        dX, dY, dZ = yRotate(dX, dY, dZ, self.yRotation)
+        dX, dY, dZ = zRotate(dX, dY, dZ, self.zRotation)
         dZ -= 200
         if dZ == 0:
             dZ = 0.0001
@@ -240,23 +258,23 @@ class RealtimeRenderer:
     def createLine(self, x1, y1, z1, x2, y2, z2, colour):
         return self.createQuad(x1, y1, z1 + 0.5, x1, y1, z1 - 0.5, x2, y2, z2 + 0.5, x2, y2, z2 - 0.5, colour, rtArgs)
 
-    def xRotate(self, x, y, z, deg): #calculates rotation of a point around x axis
-        newX = x
-        newY = (y * math.cos(deg)) - (z * math.sin(deg))
-        newZ = (y * math.sin(deg)) + (z * math.cos(deg))
-        return newX, newY, newZ
+    # def xRotate(self, x, y, z, deg): #calculates rotation of a point around x axis
+    #     newX = x
+    #     newY = (y * math.cos(deg)) - (z * math.sin(deg))
+    #     newZ = (y * math.sin(deg)) + (z * math.cos(deg))
+    #     return newX, newY, newZ
 
-    def yRotate(self, x, y, z, deg): #calculates rotation of a point around y axis
-        newX = (z * math.sin(deg)) + (x * math.cos(deg))
-        newY = y
-        newZ = (z * math.cos(deg)) - (x * math.sin(deg))
-        return newX, newY, newZ
+    # def yRotate(self, x, y, z, deg): #calculates rotation of a point around y axis
+    #     newX = (z * math.sin(deg)) + (x * math.cos(deg))
+    #     newY = y
+    #     newZ = (z * math.cos(deg)) - (x * math.sin(deg))
+    #     return newX, newY, newZ
 
-    def zRotate(self, x, y, z, deg): #calculates rotation of a point around z axis
-        newX = (x * math.cos(deg)) - (y * math.sin(deg))
-        newY = (x * math.sin(deg)) + (y * math.cos(deg))
-        newZ = z
-        return newX, newY, newZ
+    # def zRotate(self, x, y, z, deg): #calculates rotation of a point around z axis
+    #     newX = (x * math.cos(deg)) - (y * math.sin(deg))
+    #     newY = (x * math.sin(deg)) + (y * math.cos(deg))
+    #     newZ = z
+    #     return newX, newY, newZ
 
     def trianglesFromMesh(self, x, y, z, mesh, faces, sf, colour, rtArgs):
         triangles = []
@@ -271,12 +289,12 @@ class RealtimeRenderer:
                                       colour, rtArgs))
         return triangles #returns Triangle objects from an obj mesh
 
-    def load(self, obj, sf, colour): #creates a mesh from the vertices of an obj file (relies on trianglesFromMesh())
+    def load(self, obj, sf, colour, rtArgs): #creates a mesh from the vertices of an obj file (relies on trianglesFromMesh())
         if obj == 0:
             return 0
         else:
             data = pywavefront.Wavefront(obj, collect_faces = True)
-            meshB1 = self.trianglesFromMesh(0, 0, 0, data.vertices, [face for mesh in data.mesh_list for face in mesh.faces], sf, colour)
+            meshB1 = self.trianglesFromMesh(0, 0, 0, data.vertices, [face for mesh in data.mesh_list for face in mesh.faces], sf, colour, rtArgs)
             return[meshB1]
 
     def setup(self, obj):
@@ -289,8 +307,6 @@ class RealtimeRenderer:
         unshadedShapes = []
         if obj == 0:
             #replace with normal scene ie ground sphere and light sphere
-            cube1 = self.createQuad(0,0,0,0,0,0,0,0,0,0,0,0,colourB, ["Triangle",0,0])
-            shadedShapes.append(cube1)
             if self.demoMode:
                 # shadedShapes.append(self.createCube(100, 0, 0, 0, colourA, ["Triangle",0,0]))
                 # shadedShapes.append(Sphere(self, 60, 0, 50, 10, colourA, ["Sphere",0,0]))
@@ -306,6 +322,10 @@ class RealtimeRenderer:
                 
                 # shadedShapes.append(Sphere(self, 50, -50, 0, 10, colourA, ["Sphere",0.5,0]))
                 # shadedShapes.append(Sphere(self, -50, 50, 0, 20, colourB, ["Sphere",0.5,0]))
+            else:
+                cube1 = self.createQuad(0,0,0,0,0,0,0,0,0,0,0,0,colourB, ["Triangle",0,0])
+                shadedShapes.append(cube1)
+
         else:
             shadedShapes.append(obj) #return all objects on screen as an array ie return[cube1, cube2, quad1, quad2]
         if self.eye[4]:
@@ -340,4 +360,3 @@ class RealtimeRenderer:
     
         for shape in newAllShapes:
             shape.render()
-        
