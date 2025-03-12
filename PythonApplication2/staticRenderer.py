@@ -88,7 +88,7 @@ class Ray:
             return HitInfo(False, None, None, None, None, None, None)
     
 class StaticRenderer:
-    def __init__(self, width, height, camPos, screen, meshIn):
+    def __init__(self, width, height, camPos, screen, meshIn, skyTint, skyLight):
         self.width = width
         self.height = height
         self.camPos = Vect(camPos[0], camPos[1], camPos[2])
@@ -97,6 +97,8 @@ class StaticRenderer:
         self.frames = 1
         self.surface = np.zeros((width, height, 3), dtype=np.uint8)
         self.screen = screen
+        self.skyTint = skyTint
+        self.skyLight = skyLight
         coordRatio = 0.25
         zOffset = -50
         for shape in meshIn:
@@ -110,7 +112,6 @@ class StaticRenderer:
                                           shape.radius * coordRatio,
                                           Vect(shape.colour[0], shape.colour[1], shape.colour[2]), shape.rtArgs[1], shape.rtArgs[2]))
                 
-            
     @staticmethod
     def findRayHit(objects, ray):
         closestHit = HitInfo(None, float("inf"), None, None, Vect(0,0,0), Vect(0,0,0), 0)
@@ -129,7 +130,7 @@ class StaticRenderer:
 
     @staticmethod
     def pixelShader(args):
-        objects, x, y, maxBounces, width, height = args
+        objects, x, y, maxBounces, width, height, skyTint, skyLight = args
         coord = Vect(x, height - y, 1.0)
         coord /= Vect(width, height, 1.0)
         coord = coord * 2 - 1
@@ -164,17 +165,17 @@ class StaticRenderer:
                 cos = max(hitInfo.normal.dot(ray.direction), 0) * 2
 
             else:
-                skyTint = (1,1,1.7) #standard 1,1,1.7 1.5,1.3,1
-                skyLight = 0.5 #standard 0.5
-                skyAmt = skyLight / ((ray.direction.y + 1) ** 2)
-                skyColor = Vect(skyAmt * skyTint[0], skyAmt * skyTint[1], skyAmt  * skyTint[2])
-                light += colour * skyColor * cos
+                # skyTint = (1,1,1.7) #standard 1,1,1.7 1.5,1.3,1
+                # skyLight = 0.8 #standard 0.8
+                skyAmt = skyLight / ((ray.direction.y + 1.2) ** 2)
+                skyColour = Vect(skyAmt * skyTint[0], skyAmt * skyTint[1], skyAmt * skyTint[2])
+                light += colour * skyColour * cos
                 break
 
         return light * 1.5
     
     def parallelShading(self):
-        coords = [(self.objects, index % self.width, index // self.width, 3, self.width, self.height) for index in range(self.width * self.height)]
+        coords = [(self.objects, index % self.width, index // self.width, 3, self.width, self.height, self.skyTint, self.skyLight) for index in range(self.width * self.height)]
         
         with Pool() as pool:
             colours = pool.map(StaticRenderer.pixelShader, coords)
@@ -291,9 +292,9 @@ class StaticRenderer:
             self.show()
             end = time.time()
             frameTime = end - start
-            print("frame:", self.frames, "took", frameTime, "seconds")
+            print("frame:", self.frames, "took", round(frameTime, 3), "seconds")
             totalTime += frameTime
-            print("Total render time:", totalTime)
+            print("Total render time:", round(totalTime, 3))
             self.frames += 1
         
         pySurface = pygame.surfarray.make_surface(self.surface)

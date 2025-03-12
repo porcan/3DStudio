@@ -32,10 +32,6 @@ if __name__ == "__main__":
     uiInputData = {fileInput : "",
                    sfInput : ""}
     
-    colourRSlider = gui.elements.UIHorizontalSlider(relative_rect = pygame.Rect((155, 287), (100, 19)), start_value = 0, value_range = (0,255), manager = guiManager, visible = 0)
-    colourGSlider = gui.elements.UIHorizontalSlider(relative_rect = pygame.Rect((155, 287 + 16), (100, 19)), start_value = 0, value_range = (0,255), manager = guiManager, visible = 0)
-    colourBSlider = gui.elements.UIHorizontalSlider(relative_rect = pygame.Rect((155, 287 + 32), (100, 19)), start_value = 0, value_range = (0,255), manager = guiManager, visible = 0)
-
     state = "setup" #states: setup, editor, rendering
     background = bg_mainmenu
     demoMode = False
@@ -59,25 +55,9 @@ if __name__ == "__main__":
                     state = "editor"
                 elif event.ui_element == loadFileButton:
                     background = bg_loadfile
-                    runDemoButton.hide()
-                    loadFileButton.hide()
-                    openEditorButton.hide()
+                    uiHide((runDemoButton, loadFileButton, openEditorButton))
                     quitButton.set_position((426, 363))
-                    fileInput.show()
-                    sfInput.show()
-                    loadButton.show()
-                    returnButton.show()
-                    # obj = input("File to load: ")
-                    # sf = float(input("SF: "))
-                    # shapes = (obj, sf)
-                    # camPos = input("Camera position: ")
-                    # camPos = tuple(int(x) for x in camPos.split(","))
-                    # baseCamX, baseCamY, baseCamZ = camPos
-                    # lightPos = input("Light source (CAM for camera): ")
-                    # if not lightPos == "CAM":
-                    #     lightPos = tuple(int(y) for y in lightPos.split(","))
-                    # polyGoal = int(input("Polygon display limit (reccommended 1000): "))
-                    # state = "editor"
+                    uiShow((fileInput, sfInput, loadButton, returnButton))
                 elif event.ui_element == openEditorButton:
                     shapes = (0, 0)
                     state = "editor"
@@ -86,14 +66,9 @@ if __name__ == "__main__":
                     state = "editor"
                 elif event.ui_element == returnButton:
                     background = bg_mainmenu
-                    fileInput.hide()
-                    sfInput.hide()
-                    loadButton.hide()
-                    returnButton.hide()
+                    uiHide((fileInput, sfInput, loadButton, returnButton))
                     quitButton.set_position((555, 287))
-                    runDemoButton.show()
-                    loadFileButton.show()
-                    openEditorButton.show()
+                    uiShow((runDemoButton, loadFileButton, openEditorButton))
                 elif event.ui_element == quitButton:
                     quit()
             if event.type == gui.UI_TEXT_ENTRY_CHANGED:
@@ -106,19 +81,12 @@ if __name__ == "__main__":
     baseCamX, baseCamY, baseCamZ = 0, 0, 1000
     lightPos = "CAM"
     polyGoal = 2000
-    runDemoButton.hide()
-    loadFileButton.hide()
-    openEditorButton.hide()
-    quitButton.hide()
-    loadButton.hide()
-    returnButton.hide()
-    fileInput.hide()
-    sfInput.hide()
+    uiHide((runDemoButton, loadFileButton, openEditorButton, quitButton, loadButton, returnButton, fileInput, sfInput))
 
     count = 0
     focalLength = 300#300
-    skyTint = (1,1,1.7) #standard 1,1,1.7, 1.5,1.3,1
-    skyLight = 0.5
+    skyTint = (1,1,1.7) #standard 1,1,1.7, 1.5,1.3,1 #hex is 9696FF
+    skyLight = 0.8
     globalTranslate = (95,0,0)
     rt = RealtimeRenderer(window, focalLength, clock, baseCamX, baseCamY, baseCamZ, polyGoal, lightPos, skyTint, skyLight, globalTranslate, demoMode)
 
@@ -135,11 +103,40 @@ if __name__ == "__main__":
     pygame.display.set_caption("3D Studio - Editor")
 
     renderButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 37), (100, 50)), text = "Render", manager = guiManager)
-    editSkyButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 103), (100, 50)), text = "Edit Sky", manager = guiManager)
-    addShapeButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 169), (100, 50)), text = "Add Shape", manager = guiManager)
+    addSphereButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 103), (100, 50)), text = "Add Sphere", manager = guiManager)
+    addTriangleButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 169), (100, 50)), text = "Add Triangle", manager = guiManager)
+    editSkyButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 235), (100, 50)), text = "Edit Sky", manager = guiManager)
     quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 456), (100, 50)), text = "Quit", manager = guiManager)
 
+    centreInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((133, 103), (100, 50)), manager = guiManager, placeholder_text = "Centre: x,y,z", visible = 0)
+    radiusInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((229, 103), (70, 50)), manager = guiManager, placeholder_text = "Radius:", visible = 0)
+    colourInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((295,103), (115, 50)), manager = guiManager, placeholder_text = "Colour: FFFFFF", visible = 0)
+    shineInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((406, 103), (90, 50)), manager = guiManager, placeholder_text = "Shine: 0-1", visible = 0)
+    emissionInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((492, 103), (110, 50)), manager = guiManager, placeholder_text = "Emission: 0-1", visible = 0)
+    addButton = gui.elements.UIButton(relative_rect = pygame.Rect((598, 103), (50, 50)), text = "Add", manager = guiManager, visible = 0)
+
+    point1Input = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((133, 169), (105, 50)), manager = guiManager, placeholder_text = "Point 1: x,y,z", visible = 0)
+    point2Input = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((234, 169), (105, 50)), manager = guiManager, placeholder_text = "Point 2: x,y,z", visible = 0)
+    point3Input = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((335, 169), (105, 50)), manager = guiManager, placeholder_text = "Point 3: x,y,z", visible = 0)
+
+    lightInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((244, 235), (90, 50)), manager = guiManager, placeholder_text = "Light: 0-1", visible = 0)
+    updateButton = gui.elements.UIButton(relative_rect = pygame.Rect((330, 235), (70, 50)), text = "Update", manager = guiManager, visible = 0)
+
+    uiInputData = {centreInput : "",
+                   radiusInput : "",
+                   colourInput : "",
+                   shineInput : "",
+                   emissionInput : "",
+                   point1Input : "",
+                   point2Input : "",
+                   point3Input : "",
+                   lightInput : ""}
+
     polygons = unnest(rt.setup(loadedObj))
+
+    addingSphere = False
+    addingTriangle = False
+    editingSky = False
 
     while state == "editor":
         clock.tick()
@@ -150,18 +147,6 @@ if __name__ == "__main__":
         rt.update()
         rt.render(polygons)
         pygame.draw.rect(window, (6, 6, 15), pygame.Rect(0, 0, 170, winHeight))
-
-        # font = pygame.font.SysFont("calibri", 32)
-        # text1 = font.render("Camera position: " + str(round(rt.camX)) + ", " + str(round(rt.camY)) + ", " + str(round(rt.camZ)), True, (255, 255, 255))
-        # text1Pos = text1.get_rect()
-        # text1Pos.topleft = (180, 10)
-
-        # text3 = font.render("FPS: " + str(round(rt.clock.get_fps())), True, (255, 255, 255))
-        # text3Pos = text3.get_rect()
-        # text3Pos.topleft = (180, 100)
-        # window.blit(text1, text1Pos)
-
-        # window.blit(text3, text3Pos) #writing data to screen as text
         
         guiManager.update(time_delta)
         guiManager.draw_ui(window)
@@ -178,18 +163,82 @@ if __name__ == "__main__":
                         rt.rotationLock = False
                     else:
                         rt.rotationLock = True
-            if event.type == pygame.KEYDOWN: #remove later this is unused
-                if event.key == pygame.K_c:
-                    rt.eyeShowHide()
             if event.type == gui.UI_BUTTON_PRESSED:
                 if event.ui_element == renderButton:
                     state = "rendering"
+                elif event.ui_element == addSphereButton:
+                    if addingSphere:
+                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton))
+                    else:
+                        addingTriangle = False
+                        editingSky = False
+                        uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton, lightInput, updateButton))
+                        colourInput.set_position((295, 103))
+                        shineInput.set_position((406, 103))
+                        emissionInput.set_position((492, 103))
+                        addButton.set_position((598, 103))
+                        uiShow((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton))
+                    addingSphere = not addingSphere
+                elif event.ui_element == addTriangleButton:
+                    if addingTriangle:
+                        uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton))
+                    else:
+                        addingSphere = False
+                        editingSky = False
+                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton, lightInput, updateButton))
+                        colourInput.set_position((436, 169))
+                        shineInput.set_position((547, 169))
+                        emissionInput.set_position((633, 169))
+                        addButton.set_position((739, 169))
+                        uiShow((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton))
+                    addingTriangle = not addingTriangle
+                elif event.ui_element == addButton:
+                    if addingSphere:
+                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton))
+                        valid = True
+                        if valid:
+                            p = uiInputData[centreInput].split(",")
+                            sphere = rt.getSphere(float(p[0]), float(p[1]), float(p[2]), float(uiInputData[radiusInput]),
+                                                  normaliseRGB(hexToRGB(uiInputData[colourInput])),
+                                                  float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
+                            polygons.append(sphere)
+                        addingSphere = False
+                    elif addingTriangle:
+                        uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton))
+                        valid = True
+                        if valid:
+                            p1 = uiInputData[point1Input].split(",")
+                            p2 = uiInputData[point2Input].split(",")
+                            p3 = uiInputData[point3Input].split(",")
+                            triangle = rt.getTriangle(p1, p2, p3,
+                                                      normaliseRGB(hexToRGB(uiInputData[colourInput])),
+                                                      float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
+                            polygons.append(triangle)
+                        addingTriangle = False
+                elif event.ui_element == editSkyButton:
+                    if editingSky:
+                        uiHide((colourInput, lightInput, updateButton))
+                    else:
+                        addingSphere = False
+                        addingTriangle = False
+                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton, point1Input, point2Input, point3Input, updateButton))
+                        colourInput.set_position((133, 235))
+                        uiShow((colourInput, lightInput, updateButton))
+                    editingSky = not editingSky
+                elif event.ui_element == updateButton:
+                    if editingSky:
+                        uiHide((colourInput, lightInput, updateButton))
+                        rt.skyTint = normaliseRGB(tuple(1.7 * x for x in hexToRGB(uiInputData[colourInput])))
+                        rt.skyLight = float(uiInputData[lightInput])
+                        editingSky = False
                 elif event.ui_element == quitButton:
                     quit()
             guiManager.process_events(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+            if event.type == gui.UI_TEXT_ENTRY_CHANGED:
+                uiInputData[event.ui_element] = event.text
                 
     renderInput = None
     resolutions = [(1280,720),
@@ -201,6 +250,5 @@ if __name__ == "__main__":
     pygame.display.set_caption("3D Studio - Rendering...")
     window = pygame.display.set_mode(windowSize)
 
-    # polygons = [] #clears mesh to be passed in, remove later
-    sr = StaticRenderer(width, height, (0,0,0), window, polygons)
+    sr = StaticRenderer(width, height, (0,0,0), window, polygons, rt.skyTint, rt.skyLight)
     sr.render()

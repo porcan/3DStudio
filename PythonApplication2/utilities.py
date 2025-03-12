@@ -77,105 +77,119 @@ class Vect: #class for a 3D vector
     def returnArray(self):
         return [self.x, self.y, self.z]
 
-class OctNode:
-    def __init__(self, position: Vect, radius: float, depth: int, data):
-        self.position = position
-        #children (xyz):
-        #0: +++   1: ++-   2: -+-   3: -++
-        #4: +-+   5: +--   6: ---   7: --+
-        self.children = [None, None, None, None, None, None, None, None]
-        self.radius = radius
-        self.depth = depth
-        self.data = data
-        self.min = position - radius
-        self.max = position + radius
+# class OctNode:
+#     def __init__(self, position: Vect, radius: float, depth: int, data):
+#         self.position = position
+#         #children (xyz):
+#         #0: +++   1: ++-   2: -+-   3: -++
+#         #4: +-+   5: +--   6: ---   7: --+
+#         self.children = [None, None, None, None, None, None, None, None]
+#         self.radius = radius
+#         self.depth = depth
+#         self.data = data
+#         self.min = position - radius
+#         self.max = position + radius
 
-    def addChild(self, childIndex, child):
-        self.children[childIndex] = child
+#     def addChild(self, childIndex, child):
+#         self.children[childIndex] = child
 
-    def addData(self, data):
-        self.data.append(data)
+#     def addData(self, data):
+#         self.data.append(data)
 
-    def branch(self, rCount, maxDepth):
-        f = self.radius / 2
-        newDepth = self.depth + 1
-        self.addChild(0, OctNode(self.position + Vect(f,f,f),    f, newDepth, []))
-        self.addChild(1, OctNode(self.position + Vect(f,f,-f),   f, newDepth, []))
-        self.addChild(2, OctNode(self.position + Vect(-f,f,-f),  f, newDepth, []))
-        self.addChild(3, OctNode(self.position + Vect(-f,f,f),   f, newDepth, []))
-        self.addChild(4, OctNode(self.position + Vect(f,-f,f),   f, newDepth, []))
-        self.addChild(5, OctNode(self.position + Vect(f,-f,-f),  f, newDepth, []))
-        self.addChild(6, OctNode(self.position + Vect(-f,-f,-f), f, newDepth, []))
-        self.addChild(7, OctNode(self.position + Vect(-f,-f,f),  f, newDepth, []))
-        if rCount < maxDepth:
-            for child in self.children:
-                child.branch(rCount + 1, maxDepth)
-        else:
-            return
+#     def branch(self, rCount, maxDepth):
+#         f = self.radius / 2
+#         newDepth = self.depth + 1
+#         self.addChild(0, OctNode(self.position + Vect(f,f,f),    f, newDepth, []))
+#         self.addChild(1, OctNode(self.position + Vect(f,f,-f),   f, newDepth, []))
+#         self.addChild(2, OctNode(self.position + Vect(-f,f,-f),  f, newDepth, []))
+#         self.addChild(3, OctNode(self.position + Vect(-f,f,f),   f, newDepth, []))
+#         self.addChild(4, OctNode(self.position + Vect(f,-f,f),   f, newDepth, []))
+#         self.addChild(5, OctNode(self.position + Vect(f,-f,-f),  f, newDepth, []))
+#         self.addChild(6, OctNode(self.position + Vect(-f,-f,-f), f, newDepth, []))
+#         self.addChild(7, OctNode(self.position + Vect(-f,-f,f),  f, newDepth, []))
+#         if rCount < maxDepth:
+#             for child in self.children:
+#                 child.branch(rCount + 1, maxDepth)
+#         else:
+#             return
     
-    def rayIntersects(self, ray): #may need to check this
-        epsilon = sys.float_info.epsilon
-        tMin = ((self.min - ray.origin) / (ray.direction + epsilon)).returnArray()
-        tMax = ((self.max - ray.origin) / (ray.direction + epsilon)).returnArray()
+#     def rayIntersects(self, ray): #may need to check this
+#         epsilon = sys.float_info.epsilon
+#         tMin = ((self.min - ray.origin) / (ray.direction + epsilon)).returnArray()
+#         tMax = ((self.max - ray.origin) / (ray.direction + epsilon)).returnArray()
         
-        t1 = numpy.minimum(tMin, tMax)
-        t2 = numpy.maximum(tMin, tMax)
+#         t1 = numpy.minimum(tMin, tMax)
+#         t2 = numpy.maximum(tMin, tMax)
         
-        tEntry = numpy.max(t1)
-        tExit = numpy.min(t2)
-        return (tEntry <= tExit and tExit >= 0)
+#         tEntry = numpy.max(t1)
+#         tExit = numpy.min(t2)
+#         return (tEntry <= tExit and tExit >= 0)
 
-class OctTree:
-    def __init__(self, sceneRadius, maxDepth):
-        self.root = OctNode(Vect(0,0,0), sceneRadius, 0, [])
-        self.sceneRadius = sceneRadius
-        self.maxDepth = maxDepth
-        self.root.branch(0, maxDepth)
+# class OctTree:
+#     def __init__(self, sceneRadius, maxDepth):
+#         self.root = OctNode(Vect(0,0,0), sceneRadius, 0, [])
+#         self.sceneRadius = sceneRadius
+#         self.maxDepth = maxDepth
+#         self.root.branch(0, maxDepth)
 
-    def findLocation(self, location):
-        node = self.root
-        locationArray = location.returnArray()
-        maxArray = node.max.returnArray()
-        minArray = node.min.returnArray()
-        #children (xyz):
-        #0: +++   1: ++-   2: -+-   3: -++
-        #4: +-+   5: +--   6: ---   7: --+
-        for i in range(self.maxDepth + 1):
-            if numpy.any(locationArray < minArray) or numpy.any(locationArray > maxArray):
-                return False
-            if location.x > node.position.x and location.y > node.position.y and location.z > node.position.z:
-                node = node.children[0]
-            elif location.x > node.position.x and location.y > node.position.y and location.z < node.position.z:
-                node = node.children[1]
-            elif location.x < node.position.x and location.y > node.position.y and location.z < node.position.z:
-                node = node.children[2]
-            elif location.x < node.position.x and location.y > node.position.y and location.z > node.position.z:
-                node = node.children[3]
-            elif location.x > node.position.x and location.y < node.position.y and location.z > node.position.z:
-                node = node.children[4]
-            elif location.x > node.position.x and location.y < node.position.y and location.z < node.position.z:
-                node = node.children[5]
-            elif location.x < node.position.x and location.y < node.position.y and location.z < node.position.z:
-                node = node.children[6]
-            elif location.x < node.position.x and location.y < node.position.y and location.z > node.position.z:
-                node = node.children[7]
-        return node
+#     def findLocation(self, location):
+#         node = self.root
+#         locationArray = location.returnArray()
+#         maxArray = node.max.returnArray()
+#         minArray = node.min.returnArray()
+#         #children (xyz):
+#         #0: +++   1: ++-   2: -+-   3: -++
+#         #4: +-+   5: +--   6: ---   7: --+
+#         for i in range(self.maxDepth + 1):
+#             if numpy.any(locationArray < minArray) or numpy.any(locationArray > maxArray):
+#                 return False
+#             if location.x > node.position.x and location.y > node.position.y and location.z > node.position.z:
+#                 node = node.children[0]
+#             elif location.x > node.position.x and location.y > node.position.y and location.z < node.position.z:
+#                 node = node.children[1]
+#             elif location.x < node.position.x and location.y > node.position.y and location.z < node.position.z:
+#                 node = node.children[2]
+#             elif location.x < node.position.x and location.y > node.position.y and location.z > node.position.z:
+#                 node = node.children[3]
+#             elif location.x > node.position.x and location.y < node.position.y and location.z > node.position.z:
+#                 node = node.children[4]
+#             elif location.x > node.position.x and location.y < node.position.y and location.z < node.position.z:
+#                 node = node.children[5]
+#             elif location.x < node.position.x and location.y < node.position.y and location.z < node.position.z:
+#                 node = node.children[6]
+#             elif location.x < node.position.x and location.y < node.position.y and location.z > node.position.z:
+#                 node = node.children[7]
+#         return node
     
-    def insertData(self, location, data):
-        self.findLocation(location).addData(data)
+#     def insertData(self, location, data):
+#         self.findLocation(location).addData(data)
 
-    def rayCheck(self, node, ray, objects):
-        if node.children[0] != None:
-            for child in node.children:
-                if child.rayIntersects(ray):
-                    self.rayCheck(child, ray, objects)
-        if len(node.data) > 0:
-            objects.append(node.data)
-        return objects
+#     def rayCheck(self, node, ray, objects):
+#         if node.children[0] != None:
+#             for child in node.children:
+#                 if child.rayIntersects(ray):
+#                     self.rayCheck(child, ray, objects)
+#         if len(node.data) > 0:
+#             objects.append(node.data)
+#         return objects
     
-    def getObjects(self, ray):
-        return unnest(self.rayCheck(self.root, ray, []))
-        
+#     def getObjects(self, ray):
+#         return unnest(self.rayCheck(self.root, ray, []))
+
+def uiHide(elements):
+    for element in elements:
+        element.hide()
+
+def uiShow(elements):
+    for element in elements:
+        element.show()
+
+def hexToRGB(hex):
+    r = int(hex[:2], 16)
+    g = int(hex[2:4], 16)
+    b = int(hex[4:], 16)
+    return (r, g, b)
+
 def timer(startTime):
     return time.perf_counter() - startTime
 

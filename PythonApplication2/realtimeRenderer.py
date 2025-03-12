@@ -77,10 +77,10 @@ def extractSpheres(list):
     return extracted
 
 def xRotate(x, y, z, deg): #calculates rotation of a point around x axis
-        newX = x
-        newY = (y * math.cos(deg)) - (z * math.sin(deg))
-        newZ = (y * math.sin(deg)) + (z * math.cos(deg))
-        return newX, newY, newZ
+    newX = x
+    newY = (y * math.cos(deg)) - (z * math.sin(deg))
+    newZ = (y * math.sin(deg)) + (z * math.cos(deg))
+    return newX, newY, newZ
 
 def yRotate(x, y, z, deg): #calculates rotation of a point around y axis
     newX = (z * math.sin(deg)) + (x * math.cos(deg))
@@ -148,7 +148,15 @@ class RealtimeRenderer:
                 self.lightZ += 40
             elif keyboard.is_pressed("z+down arrow"):
                 self.lightZ -= 40
+
+    def getSphere(self, x, y, z, radius, colour, shine, emission):
+        return Sphere(self, x,  y, z, radius, colour, ["Sphere", shine, emission])
     
+    def getTriangle(self, p1, p2, p3, colour, shine, emission):
+        return Triangle(self, float(p1[0]), float(p1[1]), float(p1[2]), 
+                              float(p2[0]), float(p2[1]), float(p2[2]), 
+                              float(p3[0]), float(p3[1]), float(p3[2]), colour, ["Triangle", shine, emission])
+
     def placeEye(self,x,y,z,fov):
         self.eye = [x,y,z,fov,False]
    
@@ -255,26 +263,8 @@ class RealtimeRenderer:
                self.createQuad(x - p, y + p, z - p, x + p, y + p, z - p, x + p, y + p, z + p, x - p, y + p, z + p, colour, rtArgs),
                self.createQuad(x - p, y - p, z - p, x + p, y - p, z - p, x + p, y - p, z + p, x - p, y - p, z + p, colour, rtArgs)]
     
-    def createLine(self, x1, y1, z1, x2, y2, z2, colour):
+    def createLine(self, x1, y1, z1, x2, y2, z2, colour, rtArgs):
         return self.createQuad(x1, y1, z1 + 0.5, x1, y1, z1 - 0.5, x2, y2, z2 + 0.5, x2, y2, z2 - 0.5, colour, rtArgs)
-
-    # def xRotate(self, x, y, z, deg): #calculates rotation of a point around x axis
-    #     newX = x
-    #     newY = (y * math.cos(deg)) - (z * math.sin(deg))
-    #     newZ = (y * math.sin(deg)) + (z * math.cos(deg))
-    #     return newX, newY, newZ
-
-    # def yRotate(self, x, y, z, deg): #calculates rotation of a point around y axis
-    #     newX = (z * math.sin(deg)) + (x * math.cos(deg))
-    #     newY = y
-    #     newZ = (z * math.cos(deg)) - (x * math.sin(deg))
-    #     return newX, newY, newZ
-
-    # def zRotate(self, x, y, z, deg): #calculates rotation of a point around z axis
-    #     newX = (x * math.cos(deg)) - (y * math.sin(deg))
-    #     newY = (x * math.sin(deg)) + (y * math.cos(deg))
-    #     newZ = z
-    #     return newX, newY, newZ
 
     def trianglesFromMesh(self, x, y, z, mesh, faces, sf, colour, rtArgs):
         triangles = []
@@ -314,8 +304,8 @@ class RealtimeRenderer:
                 shadedShapes.append(Sphere(self, -2400, -1200, -5000, 2000, normaliseRGB((255,255,255)), ["Sphere",0,1])) #sun
                 # shadedShapes.append(Sphere(self, 0, 4000, 180, 3980, normaliseRGB((100,100,100)), ["Sphere",0.5,0])) #ground
 
-                shadedShapes.append(Sphere(self, -4, 12, 148, 8, normaliseRGB((255,255,255)), ["Sphere",0.9,0.5]))
-                shadedShapes.append(Sphere(self, 16, 10, 148, 10, normaliseRGB((255, 52, 80)), ["Sphere",0,0]))
+                shadedShapes.append(Sphere(self, -4, 12, 148, 8, normaliseRGB((255,255,255)), ["Sphere",0.9,0]))
+                shadedShapes.append(Sphere(self, 16, 10, 148, 10, normaliseRGB((255, 52, 80)), ["Sphere",0,0.6]))
                 shadedShapes.append(Sphere(self, 40, 8, 148, 12, normaliseRGB((38, 136, 240)), ["Sphere",0,0]))
 
                 shadedShapes.append(self.createCube(10, -20, 13, 148, normaliseRGB((0, 255, 255)), ["Triangle",0,0]))
@@ -333,7 +323,8 @@ class RealtimeRenderer:
         return [shadedShapes, unshadedShapes]
 
     def render(self, allShapes):
-        skyColour = tuple([(255 * self.skyLight) * x for x in self.skyTint])
+        skyColour = tuple([(170 * self.skyLight) * x for x in self.skyTint])
+        skyColour = tuple(min(255, max(0, c)) for c in skyColour)
         self.window.fill(skyColour)
         
         if self.subdivisionAmount >= 0:
