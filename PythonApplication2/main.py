@@ -87,7 +87,7 @@ if __name__ == "__main__":
     focalLength = 300#300
     skyTint = (1,1,1.7) #standard 1,1,1.7, 1.5,1.3,1 #hex is 9696FF
     skyLight = 0.8
-    globalTranslate = (95,0,0)
+    globalTranslate = (85,0,0)
     rt = RealtimeRenderer(window, focalLength, clock, baseCamX, baseCamY, baseCamZ, polyGoal, lightPos, skyTint, skyLight, globalTranslate, demoMode)
 
     startTime = time.perf_counter()
@@ -194,19 +194,17 @@ if __name__ == "__main__":
                     addingTriangle = not addingTriangle
                 elif event.ui_element == addButton:
                     if addingSphere:
-                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton))
-                        valid = True
-                        if valid:
+                        if isValidCoordinate(uiInputData[centreInput]) and isValidPositive(uiInputData[radiusInput]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[emissionInput]):
+                            uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton))
                             p = uiInputData[centreInput].split(",")
                             sphere = rt.getSphere(float(p[0]), float(p[1]), float(p[2]), float(uiInputData[radiusInput]),
                                                   normaliseRGB(hexToRGB(uiInputData[colourInput])),
                                                   float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
                             polygons.append(sphere)
-                        addingSphere = False
+                            addingSphere = False
                     elif addingTriangle:
-                        uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton))
-                        valid = True
-                        if valid:
+                        if isValidCoordinate(uiInputData[point1Input]) and isValidCoordinate(uiInputData[point2Input]) and isValidCoordinate(uiInputData[point3Input]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[emissionInput]):
+                            uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton))
                             p1 = uiInputData[point1Input].split(",")
                             p2 = uiInputData[point2Input].split(",")
                             p3 = uiInputData[point3Input].split(",")
@@ -214,7 +212,7 @@ if __name__ == "__main__":
                                                       normaliseRGB(hexToRGB(uiInputData[colourInput])),
                                                       float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
                             polygons.append(triangle)
-                        addingTriangle = False
+                            addingTriangle = False
                 elif event.ui_element == editSkyButton:
                     if editingSky:
                         uiHide((colourInput, lightInput, updateButton))
@@ -226,7 +224,7 @@ if __name__ == "__main__":
                         uiShow((colourInput, lightInput, updateButton))
                     editingSky = not editingSky
                 elif event.ui_element == updateButton:
-                    if editingSky:
+                    if isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[lightInput]):
                         uiHide((colourInput, lightInput, updateButton))
                         rt.skyTint = normaliseRGB(tuple(1.7 * x for x in hexToRGB(uiInputData[colourInput])))
                         rt.skyLight = float(uiInputData[lightInput])

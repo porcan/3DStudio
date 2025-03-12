@@ -3,6 +3,7 @@ import math
 import numpy
 import sys
 import random
+import re
 
 class Vect: #class for a 3D vector
     def __init__(self, x: float | int, y: float | int, z: float | int):
@@ -183,6 +184,21 @@ def uiHide(elements):
 def uiShow(elements):
     for element in elements:
         element.show()
+
+def isValidCoordinate(string):
+    return re.fullmatch("-?[0-9]+,-?[0-9]+,-?[0-9]+", string)
+
+def isValidHexCode(string):
+    return re.fullmatch("([0-9]|[A-F]){6}", string)
+
+def isValidSmallDec(string):
+    if re.fullmatch("([0-9]+)|([0-9]+.[0-9]+)", string):
+        if 0 <= float(string) <= 1:
+            return True
+    return False
+
+def isValidPositive(string):
+    return re.fullmatch("([0-9]*)|([0-9]*.[0-9]+)", string)
 
 def hexToRGB(hex):
     r = int(hex[:2], 16)
