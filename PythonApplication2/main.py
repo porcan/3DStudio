@@ -25,7 +25,9 @@ if __name__ == "__main__":
     runDemoButton = gui.elements.UIButton(relative_rect = pygame.Rect((155, 287), (100, 50)), text = "Run Demo", manager = guiManager)
     loadFileButton = gui.elements.UIButton(relative_rect = pygame.Rect((288, 287), (100, 50)), text = "Load File", manager = guiManager)
     openEditorButton = gui.elements.UIButton(relative_rect = pygame.Rect((422, 287), (100, 50)), text = "Open Editor", manager = guiManager)
-    quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((555, 287), (100, 50)), text = "Quit", manager = guiManager)
+    reopenLastButton = gui.elements.UIButton(relative_rect = pygame.Rect((555, 287), (100, 50)), text = "Reopen Last", manager = guiManager)
+
+    quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((355, 373), (100, 50)), text = "Quit", manager = guiManager)
     loadButton = gui.elements.UIButton(relative_rect = pygame.Rect((158, 363), (100, 50)), text = "Load", manager = guiManager, visible = 0)
     returnButton = gui.elements.UIButton(relative_rect = pygame.Rect((292, 363), (100, 50)), text = "Return", manager = guiManager, visible = 0)
 
@@ -66,12 +68,21 @@ if __name__ == "__main__":
                     state = "editor"
                 elif event.ui_element == loadFileButton:
                     background = bg_loadfile
-                    uiHide((runDemoButton, loadFileButton, openEditorButton))
+                    uiHide((runDemoButton, loadFileButton, openEditorButton, reopenLastButton))
                     quitButton.set_position((426, 363))
                     uiShow((fileInput, sfInput, colourInput, shineInput, emissionInput, loadButton, returnButton))
                 elif event.ui_element == openEditorButton:
                     shapes = (0, 0)
                     state = "editor"
+                    polygons = []
+                elif event.ui_element == reopenLastButton:
+                    shapes = (0, 0)
+                    state = "editor"
+                    try: 
+                        save = open("savedata.txt", "rb")
+                        polygons = pickle.load(save)
+                    except:
+                        pass
                 elif event.ui_element == loadButton:
                     if isValidPositive(uiInputData[sfInput]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[shineInput]):
                         if uiInputData[fileInput].endswith(".obj") and isInDirectory(uiInputData[fileInput]):
@@ -82,8 +93,8 @@ if __name__ == "__main__":
                 elif event.ui_element == returnButton:
                     background = bg_mainmenu
                     uiHide((fileInput, sfInput, colourInput, shineInput, emissionInput, loadButton, returnButton))
-                    quitButton.set_position((555, 287))
-                    uiShow((runDemoButton, loadFileButton, openEditorButton))
+                    quitButton.set_position((355, 373))
+                    uiShow((runDemoButton, loadFileButton, openEditorButton, reopenLastButton))
                 elif event.ui_element == quitButton:
                     quit()
             if event.type == gui.UI_TEXT_ENTRY_CHANGED:
@@ -93,10 +104,10 @@ if __name__ == "__main__":
                 pygame.quit()
                 exit()
 
+    uiHide((runDemoButton, loadFileButton, openEditorButton, reopenLastButton, quitButton, loadButton, returnButton, fileInput, sfInput, colourInput, shineInput, emissionInput))
+
     baseCamX, baseCamY, baseCamZ = 0, 0, 1000
     polyGoal = 2000
-    uiHide((runDemoButton, loadFileButton, openEditorButton, quitButton, loadButton, returnButton, fileInput, sfInput, colourInput, shineInput, emissionInput))
-
     count = 0
     focalLength = 300#300
     skyTint = (1,1,1.7) #standard 1,1,1.7, 1.5,1.3,1 #hex is 9696FF
@@ -108,7 +119,7 @@ if __name__ == "__main__":
 
     # objColour = normaliseRGB((255, 92, 0))
     # objRtArgs = ["Triangle", 0, 0]
-    loadedObj = rt.load(shapes[0],shapes[1], objColour, objRtArgs)
+    loadedObj = rt.load(shapes[0], shapes[1], objColour, objRtArgs)
 
     rt.update()
 
@@ -145,12 +156,8 @@ if __name__ == "__main__":
                    point3Input : "",
                    lightInput : ""}
 
-    polygons = unnest(rt.setup(loadedObj))
-    try: 
-        save = open("savedata.txt", "rb")
-        polygons = pickle.load(save)
-    except:
-        pass
+    if loadedObj != 0 or polygons == []:
+        polygons = unnest(rt.setup(loadedObj))
 
     addingSphere = False
     addingTriangle = False
@@ -183,6 +190,8 @@ if __name__ == "__main__":
                         rt.rotationLock = True
             if event.type == gui.UI_BUTTON_PRESSED:
                 if event.ui_element == renderButton:
+                    save = open("savedata.txt", "wb")
+                    pickle.dump(polygons, save)
                     state = "rendering"
                 elif event.ui_element == addSphereButton:
                     if addingSphere:
