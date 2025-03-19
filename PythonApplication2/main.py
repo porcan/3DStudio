@@ -7,6 +7,7 @@ from realtimeRenderer import *
 from staticRenderer import *
 from utilities import *
 import pygame_gui as gui
+import subprocess
 
 if __name__ == "__main__":
     pygame.init()
@@ -27,14 +28,23 @@ if __name__ == "__main__":
     loadButton = gui.elements.UIButton(relative_rect = pygame.Rect((158, 363), (100, 50)), text = "Load", manager = guiManager, visible = 0)
     returnButton = gui.elements.UIButton(relative_rect = pygame.Rect((292, 363), (100, 50)), text = "Return", manager = guiManager, visible = 0)
 
-    fileInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 193), (150, 50)), manager = guiManager, visible = 0)
-    sfInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 278), (150, 50)), manager = guiManager, visible = 0)
+    fileInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 193), (150, 50)), manager = guiManager, placeholder_text = "example.obj", visible = 0)
+    sfInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 278), (90, 50)), manager = guiManager, placeholder_text = "Scale: 0+", visible = 0)
+    colourInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((244, 278), (115, 50)), manager = guiManager, placeholder_text = "Colour: FFFFFF", visible = 0)
+    shineInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((355, 278), (90, 50)), manager = guiManager, placeholder_text = "Shine: 0-1", visible = 0)
+    emissionInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((441, 278), (110, 50)), manager = guiManager, placeholder_text = "Emission: 0-1", visible = 0)
+    
     uiInputData = {fileInput : "",
-                   sfInput : ""}
+                   sfInput : "",
+                   colourInput : "",
+                   shineInput : "",
+                   emissionInput : ""}
     
     state = "setup" #states: setup, editor, rendering
     background = bg_mainmenu
     demoMode = False
+    objColour = normaliseRGB((255, 92, 0))
+    objRtArgs = ["Triangle", 0, 0]
     while state == "setup":
         clock.tick()
         time_delta = clock.tick(60)/1000.0
@@ -57,16 +67,20 @@ if __name__ == "__main__":
                     background = bg_loadfile
                     uiHide((runDemoButton, loadFileButton, openEditorButton))
                     quitButton.set_position((426, 363))
-                    uiShow((fileInput, sfInput, loadButton, returnButton))
+                    uiShow((fileInput, sfInput, colourInput, shineInput, emissionInput, loadButton, returnButton))
                 elif event.ui_element == openEditorButton:
                     shapes = (0, 0)
                     state = "editor"
                 elif event.ui_element == loadButton:
-                    shapes = (uiInputData[fileInput], float(uiInputData[sfInput]))
-                    state = "editor"
+                    if isValidPositive(uiInputData[sfInput]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[shineInput]):
+                        if uiInputData[fileInput].endswith(".obj") and isInDirectory(uiInputData[fileInput]):
+                            shapes = (uiInputData[fileInput], float(uiInputData[sfInput]))
+                            objColour = normaliseRGB(hexToRGB(uiInputData[colourInput]))
+                            objRtArgs = ["Triangle", float(uiInputData[shineInput]), float(uiInputData[emissionInput])]
+                            state = "editor"
                 elif event.ui_element == returnButton:
                     background = bg_mainmenu
-                    uiHide((fileInput, sfInput, loadButton, returnButton))
+                    uiHide((fileInput, sfInput, colourInput, shineInput, emissionInput, loadButton, returnButton))
                     quitButton.set_position((555, 287))
                     uiShow((runDemoButton, loadFileButton, openEditorButton))
                 elif event.ui_element == quitButton:
@@ -79,24 +93,21 @@ if __name__ == "__main__":
                 exit()
 
     baseCamX, baseCamY, baseCamZ = 0, 0, 1000
-    lightPos = "CAM"
     polyGoal = 2000
-    uiHide((runDemoButton, loadFileButton, openEditorButton, quitButton, loadButton, returnButton, fileInput, sfInput))
+    uiHide((runDemoButton, loadFileButton, openEditorButton, quitButton, loadButton, returnButton, fileInput, sfInput, colourInput, shineInput, emissionInput))
 
     count = 0
     focalLength = 300#300
     skyTint = (1,1,1.7) #standard 1,1,1.7, 1.5,1.3,1 #hex is 9696FF
     skyLight = 0.8
     globalTranslate = (85,0,0)
-    rt = RealtimeRenderer(window, focalLength, clock, baseCamX, baseCamY, baseCamZ, polyGoal, lightPos, skyTint, skyLight, globalTranslate, demoMode)
+    rt = RealtimeRenderer(window, focalLength, baseCamX, baseCamY, baseCamZ, polyGoal, skyTint, skyLight, globalTranslate, demoMode)
 
     startTime = time.perf_counter()
 
-    objColour = normaliseRGB((255, 92, 0))
-    rtArgs = ["Triangle", 0, 0]
-    loadedObj = rt.load(shapes[0],shapes[1], objColour, rtArgs)
-
-    rt.placeEye(0,0,150,(200,200))
+    # objColour = normaliseRGB((255, 92, 0))
+    # objRtArgs = ["Triangle", 0, 0]
+    loadedObj = rt.load(shapes[0],shapes[1], objColour, objRtArgs)
 
     rt.update()
 
@@ -197,7 +208,7 @@ if __name__ == "__main__":
                         if isValidCoordinate(uiInputData[centreInput]) and isValidPositive(uiInputData[radiusInput]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[emissionInput]):
                             uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton))
                             p = uiInputData[centreInput].split(",")
-                            sphere = rt.getSphere(float(p[0]), float(p[1]), float(p[2]), float(uiInputData[radiusInput]),
+                            sphere = rt.getSphere(float(p[0]), 0 - float(p[1]), float(p[2]), float(uiInputData[radiusInput]),
                                                   normaliseRGB(hexToRGB(uiInputData[colourInput])),
                                                   float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
                             polygons.append(sphere)
@@ -206,8 +217,11 @@ if __name__ == "__main__":
                         if isValidCoordinate(uiInputData[point1Input]) and isValidCoordinate(uiInputData[point2Input]) and isValidCoordinate(uiInputData[point3Input]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[emissionInput]):
                             uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton))
                             p1 = uiInputData[point1Input].split(",")
+                            p1[1] = 0 - float(p1[1])
                             p2 = uiInputData[point2Input].split(",")
+                            p2[1] = 0 - float(p2[1])
                             p3 = uiInputData[point3Input].split(",")
+                            p3[1] = 0 - float(p3[1])
                             triangle = rt.getTriangle(p1, p2, p3,
                                                       normaliseRGB(hexToRGB(uiInputData[colourInput])),
                                                       float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
@@ -250,3 +264,4 @@ if __name__ == "__main__":
 
     sr = StaticRenderer(width, height, (0,0,0), window, polygons, rt.skyTint, rt.skyLight)
     sr.render()
+    subprocess.Popen(["explorer", "image.png"])

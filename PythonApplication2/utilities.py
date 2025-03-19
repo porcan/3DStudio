@@ -4,6 +4,7 @@ import numpy
 import sys
 import random
 import re
+import os
 
 class Vect: #class for a 3D vector
     def __init__(self, x: float | int, y: float | int, z: float | int):
@@ -73,7 +74,7 @@ class Vect: #class for a 3D vector
                     (self.z / self.mag()))
     
     def roundTuple(self):
-        return(round(self.x), round(self.y), round(self.z))
+        return (round(self.x), round(self.y), round(self.z))
     
     def returnArray(self):
         return [self.x, self.y, self.z]
@@ -186,7 +187,7 @@ def uiShow(elements):
         element.show()
 
 def isValidCoordinate(string):
-    return re.fullmatch("-?[0-9]+,-?[0-9]+,-?[0-9]+", string)
+    return re.fullmatch("(-?(([0-9]+)|([0-9]+.[0-9]+)),){2}-?(([0-9]+)|([0-9]+.[0-9]+))", string)
 
 def isValidHexCode(string):
     return re.fullmatch("([0-9]|[A-F]){6}", string)
@@ -197,8 +198,15 @@ def isValidSmallDec(string):
             return True
     return False
 
+def isInDirectory(string):
+    valid = False
+    for file in os.listdir("."):
+        if file == string:
+            valid = True
+    return valid
+
 def isValidPositive(string):
-    return re.fullmatch("([0-9]*)|([0-9]*.[0-9]+)", string)
+    return re.fullmatch("([0-9]+)|([0-9]+.[0-9]+)", string)
 
 def hexToRGB(hex):
     r = int(hex[:2], 16)

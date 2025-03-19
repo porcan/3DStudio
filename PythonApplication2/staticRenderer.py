@@ -7,7 +7,7 @@ import pygame
 from utilities import *
 
 def randomVector() -> Vect:
-    return Vect(random.random() * 2 - 1.0, random.random() * 2 - 1.0, random.random() * 2.0 - 1.0)        
+    return Vect(random.random() * 2 - 1.0, random.random() * 2 - 1.0, random.random() * 2.0 - 1.0)
     
 class Sphere:
     def __init__(self, centre: Vect, radius, colour: Vect, shine: float, emission: float):
@@ -175,7 +175,7 @@ class StaticRenderer:
         return light * 1.5
     
     def parallelShading(self):
-        coords = [(self.objects, index % self.width, index // self.width, 3, self.width, self.height, self.skyTint, self.skyLight) for index in range(self.width * self.height)]
+        coords = [(self.objects, index % self.width, index // self.width, 5, self.width, self.height, self.skyTint, self.skyLight) for index in range(self.width * self.height)]
         
         with Pool() as pool:
             colours = pool.map(StaticRenderer.pixelShader, coords)
@@ -286,7 +286,6 @@ class StaticRenderer:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-
             start = time.time()
             self.parallelShading()
             self.show()
