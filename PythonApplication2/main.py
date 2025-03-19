@@ -8,6 +8,7 @@ from staticRenderer import *
 from utilities import *
 import pygame_gui as gui
 import subprocess
+import pickle
 
 if __name__ == "__main__":
     pygame.init()
@@ -117,6 +118,7 @@ if __name__ == "__main__":
     addSphereButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 103), (100, 50)), text = "Add Sphere", manager = guiManager)
     addTriangleButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 169), (100, 50)), text = "Add Triangle", manager = guiManager)
     editSkyButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 235), (100, 50)), text = "Edit Sky", manager = guiManager)
+    saveButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 390), (100, 50)), text = "Save", manager = guiManager)
     quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 456), (100, 50)), text = "Quit", manager = guiManager)
 
     centreInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((133, 103), (100, 50)), manager = guiManager, placeholder_text = "Centre: x,y,z", visible = 0)
@@ -144,6 +146,11 @@ if __name__ == "__main__":
                    lightInput : ""}
 
     polygons = unnest(rt.setup(loadedObj))
+    try: 
+        save = open("savedata.txt", "rb")
+        polygons = pickle.load(save)
+    except:
+        pass
 
     addingSphere = False
     addingTriangle = False
@@ -243,6 +250,10 @@ if __name__ == "__main__":
                         rt.skyTint = normaliseRGB(tuple(1.7 * x for x in hexToRGB(uiInputData[colourInput])))
                         rt.skyLight = float(uiInputData[lightInput])
                         editingSky = False
+                elif event.ui_element == saveButton:
+                    save = open("savedata.txt", "wb")
+                    pickle.dump(polygons, save)
+                    print("saved")
                 elif event.ui_element == quitButton:
                     quit()
             guiManager.process_events(event)

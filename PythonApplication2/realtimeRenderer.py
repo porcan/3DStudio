@@ -7,7 +7,6 @@ from utilities import *
 
 class Triangle: #each individual triangle can be rendered and moved
     def __init__(self, outer, x1, y1, z1, x2, y2, z2, x3, y3, z3, colour, rtArgs):
-        self.outer = outer
         self.x1 = x1
         self.y1 = y1
         self.z1 = z1
@@ -25,24 +24,23 @@ class Triangle: #each individual triangle can be rendered and moved
     #     self.y1, self.y2, self.y3 = self.y1 + mY, self.y2 + mY, self.y3 + mY
     #     self.z1, self.z2, self.z3 = self.z1 + mZ, self.z2 + mZ, self.z3 + mZ
 
-    def render(self): #renders the triangle object on screen
+    def render(self, outer): #renders the triangle object on screen
         if self.rtArgs[2] == 0:
-            distance = calculateDistance((self.x1 + self.x2 + self.x3) / 3, (self.y1 + self.y2 + self.y3) / 3, (self.z1 + self.z2 + self.z3) / 3, self.outer.lightX / 10, self.outer.lightY / 10, self.outer.lightZ / 10)
+            distance = calculateDistance((self.x1 + self.x2 + self.x3) / 3, (self.y1 + self.y2 + self.y3) / 3, (self.z1 + self.z2 + self.z3) / 3, outer.lightX / 10, outer.lightY / 10, outer.lightZ / 10)
             distance = 1 + abs(distance / 100)
             shade = (self.colour[0] / distance, self.colour[1] / distance, self.colour[2] / distance)
             shade = (shade[0] * 255, shade[1] * 255, shade[2] * 255)
         else:
             shade = (self.colour[0] * 255, self.colour[1] * 255, self.colour[2] * 255)
-        pygame.draw.polygon(self.outer.window, shade, (tuple(map(sum, zip(self.outer.project(self.x1, self.y1, self.z1), self.outer.globalTranslate))), 
-                                                       tuple(map(sum, zip(self.outer.project(self.x2, self.y2, self.z2), self.outer.globalTranslate))), 
-                                                       tuple(map(sum, zip(self.outer.project(self.x3, self.y3, self.z3), self.outer.globalTranslate)))))
+        pygame.draw.polygon(outer.window, shade, (tuple(map(sum, zip(outer.project(self.x1, self.y1, self.z1), outer.globalTranslate))), 
+                                                       tuple(map(sum, zip(outer.project(self.x2, self.y2, self.z2), outer.globalTranslate))), 
+                                                       tuple(map(sum, zip(outer.project(self.x3, self.y3, self.z3), outer.globalTranslate)))))
     
-    def getDistance(self):
-        return calculateDistance(((self.x1 + self.x2 + self.x3) / 3), ((self.y1 + self.y2 + self.y3) / 3), ((self.z1 + self.z2 + self.z3) / 3), self.outer.camX, self.outer.camY, self.outer.camZ)
+    def getDistance(self, outer):
+        return calculateDistance(((self.x1 + self.x2 + self.x3) / 3), ((self.y1 + self.y2 + self.y3) / 3), ((self.z1 + self.z2 + self.z3) / 3), outer.camX, outer.camY, outer.camZ)
 
 class Sphere:
     def __init__(self, outer, x, y, z, radius, colour, rtArgs):
-        self.outer = outer
         self.x = x
         self.y = y
         self.z = z
@@ -50,27 +48,27 @@ class Sphere:
         self.colour = colour
         self.rtArgs = rtArgs #should contain ["Sphere", shine, emission] in range 0-1
 
-    def render(self):
+    def render(self, outer):
         if self.rtArgs[2] == 0:
-            distance = calculateDistance(self.x, self.y, self.z, self.outer.lightX / 10, self.outer.lightY / 10, self.outer.lightZ / 10)
+            distance = calculateDistance(self.x, self.y, self.z, outer.lightX / 10, outer.lightY / 10, outer.lightZ / 10)
             distance = 1 + abs(distance / 100)
             shade = (self.colour[0] / distance, self.colour[1] / distance, self.colour[2] / distance)
             shade = (shade[0] * 255, shade[1] * 255, shade[2] * 255)
         else:
             shade = (self.colour[0] * 255, self.colour[1] * 255, self.colour[2] * 255)
 
-        projectedCentre = tuple(map(sum, zip(self.outer.project(self.x, self.y, self.z), self.outer.globalTranslate)))
-        projectedOuterPoint = tuple(map(sum, zip(self.outer.project(self.x + self.radius, self.y, self.z), self.outer.globalTranslate)))
+        projectedCentre = tuple(map(sum, zip(outer.project(self.x, self.y, self.z), outer.globalTranslate)))
+        projectedOuterPoint = tuple(map(sum, zip(outer.project(self.x + self.radius, self.y, self.z), outer.globalTranslate)))
         radius = math.sqrt((projectedOuterPoint[0] - projectedCentre[0])**2 + (projectedOuterPoint[1] - projectedCentre[1])**2)
-        projectedOuterPoint = tuple(map(sum, zip(self.outer.project(self.x, self.y + self.radius, self.z), self.outer.globalTranslate)))
+        projectedOuterPoint = tuple(map(sum, zip(outer.project(self.x, self.y + self.radius, self.z), outer.globalTranslate)))
         radius = (math.sqrt((projectedOuterPoint[0] - projectedCentre[0])**2 + (projectedOuterPoint[1] - projectedCentre[1])**2) + radius) / 2
 
-        pygame.draw.circle(self.outer.window, shade, 
+        pygame.draw.circle(outer.window, shade, 
                                (int(projectedCentre[0]), int(projectedCentre[1])), 
                                radius)
     
-    def getDistance(self):
-        return calculateDistance((self.x), (self.y), (self.z), self.outer.camX, self.outer.camY, self.outer.camZ)
+    def getDistance(self, outer):
+        return calculateDistance((self.x), (self.y), (self.z), outer.camX, outer.camY, outer.camZ)
     
 def extractSpheres(list):
     extracted = []
@@ -298,11 +296,11 @@ class RealtimeRenderer:
     
         distances = []
         for i in range(len(allShapes)):
-            distances.append([i, allShapes[i].getDistance()]) #adds all distances to an array with an identifier corresponding to the position of each triangle in allShapes
+            distances.append([i, allShapes[i].getDistance(self)]) #adds all distances to an array with an identifier corresponding to the position of each triangle in allShapes
         distances = mergeSort(distances, True, 1) #sorts distances in descending order according to the distances (item 1 of each sub array)
         newAllShapes = []
         for j in range(len(distances)):
             newAllShapes.append(allShapes[distances[j][0]])
     
         for shape in newAllShapes:
-            shape.render()
+            shape.render(self)
