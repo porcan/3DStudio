@@ -25,13 +25,12 @@ if __name__ == "__main__":
     runDemoButton = gui.elements.UIButton(relative_rect = pygame.Rect((155, 287), (100, 50)), text = "Run Demo", manager = guiManager)
     loadFileButton = gui.elements.UIButton(relative_rect = pygame.Rect((288, 287), (100, 50)), text = "Load File", manager = guiManager)
     openEditorButton = gui.elements.UIButton(relative_rect = pygame.Rect((422, 287), (100, 50)), text = "Open Editor", manager = guiManager)
-    reopenLastButton = gui.elements.UIButton(relative_rect = pygame.Rect((555, 287), (100, 50)), text = "Reopen Last", manager = guiManager)
+    quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((555, 287), (100, 50)), text = "Quit", manager = guiManager)
 
-    quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((355, 373), (100, 50)), text = "Quit", manager = guiManager)
     loadButton = gui.elements.UIButton(relative_rect = pygame.Rect((158, 363), (100, 50)), text = "Load", manager = guiManager, visible = 0)
     returnButton = gui.elements.UIButton(relative_rect = pygame.Rect((292, 363), (100, 50)), text = "Return", manager = guiManager, visible = 0)
 
-    fileInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 193), (150, 50)), manager = guiManager, placeholder_text = "example.obj", visible = 0)
+    fileInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 193), (150, 50)), manager = guiManager, placeholder_text = ".obj or .txt", visible = 0)
     sfInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((158, 278), (90, 50)), manager = guiManager, placeholder_text = "Scale: 0+", visible = 0)
     colourInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((244, 278), (115, 50)), manager = guiManager, placeholder_text = "Colour: FFFFFF", visible = 0)
     shineInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((355, 278), (90, 50)), manager = guiManager, placeholder_text = "Shine: 0-1", visible = 0)
@@ -65,36 +64,37 @@ if __name__ == "__main__":
                     # runDemoButton.kill()
                     demoMode = True
                     shapes = (0, 0)
+                    polygons = []
                     state = "editor"
                 elif event.ui_element == loadFileButton:
                     background = bg_loadfile
-                    uiHide((runDemoButton, loadFileButton, openEditorButton, reopenLastButton))
+                    uiHide((runDemoButton, loadFileButton, openEditorButton))
                     quitButton.set_position((426, 363))
                     uiShow((fileInput, sfInput, colourInput, shineInput, emissionInput, loadButton, returnButton))
                 elif event.ui_element == openEditorButton:
                     shapes = (0, 0)
                     state = "editor"
                     polygons = []
-                elif event.ui_element == reopenLastButton:
-                    shapes = (0, 0)
-                    state = "editor"
-                    try: 
-                        save = open("savedata.txt", "rb")
-                        polygons = pickle.load(save)
-                    except:
-                        pass
                 elif event.ui_element == loadButton:
-                    if isValidPositive(uiInputData[sfInput]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[shineInput]):
-                        if uiInputData[fileInput].endswith(".obj") and isInDirectory(uiInputData[fileInput]):
+                    if uiInputData[fileInput].endswith(".obj") and isInDirectory(uiInputData[fileInput]):
+                        if isValidPositive(uiInputData[sfInput]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[shineInput]):
                             shapes = (uiInputData[fileInput], float(uiInputData[sfInput]))
                             objColour = normaliseRGB(hexToRGB(uiInputData[colourInput]))
                             objRtArgs = ["Triangle", float(uiInputData[shineInput]), float(uiInputData[emissionInput])]
                             state = "editor"
+                    elif uiInputData[fileInput].endswith(".txt") and isInDirectory(uiInputData[fileInput]):
+                        try: 
+                            save = open(uiInputData[fileInput], "rb")
+                            polygons = pickle.load(save)
+                            shapes = (0, 0)
+                            state = "editor"
+                        except:
+                            pass
                 elif event.ui_element == returnButton:
                     background = bg_mainmenu
                     uiHide((fileInput, sfInput, colourInput, shineInput, emissionInput, loadButton, returnButton))
-                    quitButton.set_position((355, 373))
-                    uiShow((runDemoButton, loadFileButton, openEditorButton, reopenLastButton))
+                    quitButton.set_position((555, 287))
+                    uiShow((runDemoButton, loadFileButton, openEditorButton))
                 elif event.ui_element == quitButton:
                     quit()
             if event.type == gui.UI_TEXT_ENTRY_CHANGED:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
                 pygame.quit()
                 exit()
 
-    uiHide((runDemoButton, loadFileButton, openEditorButton, reopenLastButton, quitButton, loadButton, returnButton, fileInput, sfInput, colourInput, shineInput, emissionInput))
+    uiHide((runDemoButton, loadFileButton, openEditorButton, quitButton, loadButton, returnButton, fileInput, sfInput, colourInput, shineInput, emissionInput))
 
     baseCamX, baseCamY, baseCamZ = 0, 0, 1000
     polyGoal = 2000
@@ -129,8 +129,10 @@ if __name__ == "__main__":
     addSphereButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 103), (100, 50)), text = "Add Sphere", manager = guiManager)
     addTriangleButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 169), (100, 50)), text = "Add Triangle", manager = guiManager)
     editSkyButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 235), (100, 50)), text = "Edit Sky", manager = guiManager)
-    saveButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 390), (100, 50)), text = "Save", manager = guiManager)
+    saveAsButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 390), (100, 50)), text = "Save As", manager = guiManager)
     quitButton = gui.elements.UIButton(relative_rect = pygame.Rect((37, 456), (100, 50)), text = "Quit", manager = guiManager)
+    undoButton = gui.elements.UIButton(relative_rect = pygame.Rect((650, 456), (50, 50)), text = "Undo", manager = guiManager)
+    redoButton = gui.elements.UIButton(relative_rect = pygame.Rect((725, 456), (50, 50)), text = "Redo", manager = guiManager)
 
     centreInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((133, 103), (100, 50)), manager = guiManager, placeholder_text = "Centre: x,y,z", visible = 0)
     radiusInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((229, 103), (70, 50)), manager = guiManager, placeholder_text = "Radius:", visible = 0)
@@ -146,6 +148,9 @@ if __name__ == "__main__":
     lightInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((244, 235), (90, 50)), manager = guiManager, placeholder_text = "Light: 0-1", visible = 0)
     updateButton = gui.elements.UIButton(relative_rect = pygame.Rect((330, 235), (70, 50)), text = "Update", manager = guiManager, visible = 0)
 
+    saveFileInput = gui.elements.UITextEntryBox(relative_rect = pygame.Rect((133, 390), (120, 50)), manager = guiManager, placeholder_text = "Filename: .txt", visible = 0)
+    saveButton = gui.elements.UIButton(relative_rect = pygame.Rect((249, 390), (50, 50)), text = "Save", manager = guiManager, visible = 0)
+
     uiInputData = {centreInput : "",
                    radiusInput : "",
                    colourInput : "",
@@ -154,7 +159,8 @@ if __name__ == "__main__":
                    point1Input : "",
                    point2Input : "",
                    point3Input : "",
-                   lightInput : ""}
+                   lightInput : "",
+                   saveFileInput : ""}
 
     if loadedObj != 0 or polygons == []:
         polygons = unnest(rt.setup(loadedObj))
@@ -162,6 +168,10 @@ if __name__ == "__main__":
     addingSphere = False
     addingTriangle = False
     editingSky = False
+    savingAs = False
+
+    undoStack = Stack()
+    redoStack = Stack()
 
     while state == "editor":
         clock.tick()
@@ -199,7 +209,8 @@ if __name__ == "__main__":
                     else:
                         addingTriangle = False
                         editingSky = False
-                        uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton, lightInput, updateButton))
+                        savingAs = False
+                        uiHide((point1Input, point2Input, point3Input, colourInput, shineInput, emissionInput, addButton, lightInput, updateButton, saveFileInput, saveButton))
                         colourInput.set_position((295, 103))
                         shineInput.set_position((406, 103))
                         emissionInput.set_position((492, 103))
@@ -212,7 +223,8 @@ if __name__ == "__main__":
                     else:
                         addingSphere = False
                         editingSky = False
-                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton, lightInput, updateButton))
+                        savingAs = False
+                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton, lightInput, updateButton, saveFileInput, saveButton))
                         colourInput.set_position((436, 169))
                         shineInput.set_position((547, 169))
                         emissionInput.set_position((633, 169))
@@ -228,6 +240,7 @@ if __name__ == "__main__":
                                                   normaliseRGB(hexToRGB(uiInputData[colourInput])),
                                                   float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
                             polygons.append(sphere)
+                            undoStack.push(sphere)
                             addingSphere = False
                     elif addingTriangle:
                         if isValidCoordinate(uiInputData[point1Input]) and isValidCoordinate(uiInputData[point2Input]) and isValidCoordinate(uiInputData[point3Input]) and isValidHexCode(uiInputData[colourInput]) and isValidSmallDec(uiInputData[shineInput]) and isValidSmallDec(uiInputData[emissionInput]):
@@ -242,6 +255,7 @@ if __name__ == "__main__":
                                                       normaliseRGB(hexToRGB(uiInputData[colourInput])),
                                                       float(uiInputData[shineInput]), float(uiInputData[emissionInput]))
                             polygons.append(triangle)
+                            undoStack.append(triangle)
                             addingTriangle = False
                 elif event.ui_element == editSkyButton:
                     if editingSky:
@@ -249,7 +263,8 @@ if __name__ == "__main__":
                     else:
                         addingSphere = False
                         addingTriangle = False
-                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton, point1Input, point2Input, point3Input, updateButton))
+                        savingAs = False
+                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton, point1Input, point2Input, point3Input, updateButton, saveFileInput, saveButton))
                         colourInput.set_position((133, 235))
                         uiShow((colourInput, lightInput, updateButton))
                     editingSky = not editingSky
@@ -259,10 +274,34 @@ if __name__ == "__main__":
                         rt.skyTint = normaliseRGB(tuple(1.7 * x for x in hexToRGB(uiInputData[colourInput])))
                         rt.skyLight = float(uiInputData[lightInput])
                         editingSky = False
+                elif event.ui_element == saveAsButton:
+                    if savingAs:
+                        uiHide((saveFileInput, saveButton))
+                    else:
+                        uiHide((centreInput, radiusInput, colourInput, shineInput, emissionInput, addButton, point1Input, point2Input, point3Input, updateButton, lightInput, updateButton))
+                        uiShow((saveFileInput, saveButton))
+                    savingAs = not savingAs
                 elif event.ui_element == saveButton:
-                    save = open("savedata.txt", "wb")
-                    pickle.dump(polygons, save)
-                    print("saved")
+                    if uiInputData[saveFileInput].endswith(".txt"):
+                        try:
+                            save = open(uiInputData[saveFileInput], "wb")
+                            pickle.dump(polygons, save)
+                        except:
+                            pass
+                        uiHide((saveFileInput, saveButton))
+                        savingAs = False
+                elif event.ui_element == undoButton:
+                    if undoStack.hasData():
+                        action = undoStack.pop()
+                        if action is not None:
+                            polygons.remove(action)
+                        redoStack.push(action)
+                elif event.ui_element == redoButton:
+                    if redoStack.hasData():
+                        action = redoStack.pop()
+                        if action is not None:
+                            polygons.append(action)
+                        undoStack.push(action)
                 elif event.ui_element == quitButton:
                     quit()
             guiManager.process_events(event)

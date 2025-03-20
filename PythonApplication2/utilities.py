@@ -280,3 +280,41 @@ def solveQuadratic(a, b, c): #function for returning the roots of a quadratic eq
         root1 = (-b + math.sqrt(discriminant)) / (2*a)
         root2 = (-b - math.sqrt(discriminant)) / (2*a)
         return (root1, root2)
+    
+
+class StackNode: 
+    def __init__(self, lower, data):
+        self.lower = lower
+        self.data = data
+
+class Stack: #stack data structure implemented as a linked list of StackNode objects
+    def __init__(self):
+        self.top = None
+
+    def __repr__(self):
+        if self.hasData():
+            node = self.top
+            out = []
+            while node.lower is not None:
+                out.append(node.data)
+                node = node.lower
+            out.append(node.data)
+            return str(out)
+        else:
+            return "empty"
+
+    def hasData(self):
+        return self.top is not None
+    
+    def push(self, item):
+        node = StackNode(self.top, item)
+        self.top = node
+
+    def pop(self):
+        if self.hasData():
+            data = self.top
+            self.top = self.top.lower
+            return data.data
+        
+    def peek(self):
+        return self.top
